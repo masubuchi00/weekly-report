@@ -198,9 +198,54 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 /* Gen box */
 .gen-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rad2);padding:14px;margin-top:14px}
 .gen-box h4{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px}
+
+/* ===== LOGIN ===== */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto}
+.login-wrap{width:100%;max-width:360px}
+.login-title{text-align:center;margin-bottom:1.5rem}
+.login-title h1{font-size:18px;font-weight:600;color:var(--text);margin:0 0 4px}
+.login-title p{font-size:12px;color:var(--muted);margin:0}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad2);padding:1.25rem;margin-bottom:10px}
+.login-label{font-size:12px;color:var(--muted);margin-bottom:10px}
+.member-row{padding:9px 12px;border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--bg);margin-bottom:6px;transition:.1s}
+.member-row:hover{background:var(--accent-light)}
+.member-row.selected{border:2px solid var(--accent);background:var(--accent-light)}
+.member-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--accent);flex-shrink:0;letter-spacing:0.5px}
+.member-row.selected .member-avatar{background:var(--accent);color:#fff}
+.member-name{font-size:13px;color:var(--text)}
+.member-row.selected .member-name{color:var(--accent);font-weight:500}
+.login-admin-row{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rad);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.login-admin-status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+
+/* 右上ユーザー表示 */
+#current-user-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+#current-user-badge .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--accent)}
+#current-user-badge.admin-mode .user-avatar{background:var(--accent);color:#fff}
 </style>
 </head>
 <body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen" style="display:none">
+  <div class="login-wrap">
+    <div class="login-title">
+      <h1>プロジェクト進捗管理</h1>
+      <p id="login-dept-name">アジア事業推進部</p>
+    </div>
+    <div class="login-card">
+      <div class="login-label">メンバーを選択</div>
+      <div id="login-member-list"></div>
+      <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled onclick="doLogin(false)">入室する</button>
+    </div>
+    <div class="login-card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">⚙️ 管理者として入室</div>
+        <button id="btn-login-admin" class="btn sm" style="opacity:0.4;cursor:not-allowed" disabled onclick="doLogin(true)">入室する</button>
+      </div>
+      <div id="admin-in-use-msg" class="login-admin-status"></div>
+    </div>
+  </div>
+</div>
 <div class="layout">
 
 <!-- ===== SIDEBAR ===== -->
@@ -209,8 +254,13 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <div>
       <h1>プロジェクト進捗管理</h1>
       <p id="sb-dept-full">アジア事業推進部</p>
+      <div id="current-user-badge" style="margin-top:6px">
+        <div class="user-avatar" id="user-avatar-icon"></div>
+        <span id="user-name-label"></span>
+        <button class="btn" style="font-size:10px;padding:3px 10px;margin-left:6px;background:var(--neg-bg);color:var(--neg);border-color:var(--neg-border);border-radius:var(--rad);font-weight:500" onclick="doLogout()">退室する</button>
+      </div>
     </div>
-    <button class="btn ghost" style="font-size:11px;padding:3px 7px;margin-top:2px" title="設定" onclick="openDeptSettings()">⚙️</button>
+    <button class="btn ghost admin-only" style="font-size:11px;padding:3px 7px;margin-top:2px;display:none" title="設定" onclick="openDeptSettings()">⚙️</button>
   </div>
   <div class="sb-search">
     <input id="sbSearch" placeholder="プロジェクトを検索…" oninput="filterSidebar(this.value)">
@@ -235,7 +285,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <div id="sbCatList"></div>
   </div>
   <div class="sb-footer">
-    <button class="btn" style="width:100%;font-size:10px" onclick="openAddProject()">＋ プロジェクト追加</button>
+    <button class="btn admin-only" style="width:100%;font-size:10px;display:none" onclick="openAddProject()">＋ プロジェクト追加</button>
   </div>
 </div>
 
@@ -285,8 +335,8 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <div class="topbar">
       <button class="btn ghost" onclick="showList()">← 一覧</button>
       <span class="topbar-title" id="detail-topbar-title"></span>
-      <button class="btn sm" id="btn-toggle-status" onclick="toggleProjectStatus()"></button>
-      <button class="btn sm" style="color:var(--neg);border-color:var(--neg-border)" onclick="deleteProject()">🗑 削除</button>
+      <button class="btn sm admin-only" id="btn-toggle-status" onclick="toggleProjectStatus()" style="display:none"></button>
+      <button class="btn sm admin-only" style="color:var(--neg);border-color:var(--neg-border);display:none" onclick="deleteProject()">🗑 削除</button>
     </div>
     <div class="detail-wrap">
       <!-- Left -->
@@ -27971,7 +28021,8 @@ const LOGS_DEFAULT = {
 // ────────────────────────────────────────────────────────
 // FIREBASE REST API（SDK不要・読み込み順序問題なし）
 // ────────────────────────────────────────────────────────
-const FB_URL = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/weekly_report_v3';
+const FB_URL  = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/weekly_report_v3';
+const FB_LOG  = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/access_logs';
 
 const fbDB = {
   get(callback){
@@ -27986,16 +28037,73 @@ const fbDB = {
       }
     };
     xhr.onerror = function(){ callback(new Error('Network error'), null); };
-    xhr.timeout = 5000;
+    xhr.timeout = 8000;
     xhr.ontimeout = function(){ callback(new Error('Timeout'), null); };
     xhr.send();
   },
+  // 全データ一括保存（設定系・projects用）
   set(data){
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', `${FB_URL}.json`, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onerror = function(){ console.warn('Firebase save error'); };
     xhr.send(JSON.stringify(data));
+  },
+  // 個別パスへの部分更新（logs・highlights用）
+  patch(path, data){
+    const xhr = new XMLHttpRequest();
+    xhr.open('PATCH', `${FB_URL}/${path}.json`, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onerror = function(){ console.warn('Firebase patch error:', path); };
+    xhr.send(JSON.stringify(data));
+  },
+  // 個別パスへの上書き（単一ログエントリ用）
+  put(path, data){
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', `${FB_URL}/${path}.json`, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onerror = function(){ console.warn('Firebase put error:', path); };
+    xhr.send(JSON.stringify(data));
+  },
+  // 個別パスの削除
+  delete(path){
+    const xhr = new XMLHttpRequest();
+    xhr.open('DELETE', `${FB_URL}/${path}.json`, true);
+    xhr.onerror = function(){ console.warn('Firebase delete error:', path); };
+    xhr.send();
+  },
+  // アクセスログ記録（30日以上古いログを自動削除）
+  writeLog(action, detail){
+    const ts = Date.now();
+    const ua = navigator.userAgent.substring(0, 100);
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', `${FB_LOG}/${ts}.json`, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({
+      ts, action, detail, ua,
+      time: new Date(ts).toISOString(),
+      projectCount: PROJECTS ? PROJECTS.length : 0
+    }));
+    // 30日以上古いログを削除
+    this.cleanOldLogs();
+  },
+  cleanOldLogs(){
+    const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `${FB_LOG}.json?orderBy="ts"&endAt=${cutoff}`, true);
+    xhr.onload = function(){
+      if(xhr.status !== 200) return;
+      try{
+        const old = JSON.parse(xhr.responseText);
+        if(!old) return;
+        Object.keys(old).forEach(key=>{
+          const d = new XMLHttpRequest();
+          d.open('DELETE', `${FB_LOG}/${key}.json`, true);
+          d.send();
+        });
+      }catch(e){}
+    };
+    xhr.send();
   }
 };
 
@@ -28005,6 +28113,7 @@ let REPORT_PICKS = {};
 let DEPT_FULL   = 'アジア事業推進部';
 let CATEGORIES  = ['①新規事業創出','②アジア向けソフトウェア','③市場開拓','④機材販売','⑤その他'];
 let _firebaseSaveTimer = null;
+let _fbLogTimer = null;
 
 function loadState(){
   try{ const r=localStorage.getItem(STORE_KEY); if(r) return JSON.parse(r); }catch(e){}
@@ -28012,10 +28121,23 @@ function loadState(){
 }
 
 function saveState(){
+  // localStorageにも保存
   try{ localStorage.setItem(STORE_KEY, JSON.stringify({projects:PROJECTS, logs:LOGS, highlights:HIGHLIGHTS, reportPicks:REPORT_PICKS, deptFull:DEPT_FULL, categories:CATEGORIES})); }catch(e){}
   if(_firebaseSaveTimer) clearTimeout(_firebaseSaveTimer);
   _firebaseSaveTimer = setTimeout(()=>{
-    fbDB.set({projects:PROJECTS, logs:LOGS, highlights:HIGHLIGHTS, reportPicks:REPORT_PICKS, deptFull:DEPT_FULL, categories:CATEGORIES});
+    // 設定系・タイムスタンプのみ更新（logs/projects/highlightsは各操作で個別PUT）
+    const ts = Date.now();
+    window._lastTs = String(ts);
+    fbDB.patch('', {
+      deptFull: DEPT_FULL,
+      categories: CATEGORIES,
+      _ts: ts
+    });
+    // REPORT_PICKSは週単位で個別保存（競合防止）
+    Object.entries(REPORT_PICKS).forEach(([week, picks])=>{
+      fbDB.put(`reportPicks/${week}`, picks);
+    });
+    fbDB.writeLog('saveState', `projects:${PROJECTS.length} logs:${Object.keys(LOGS).length}`);
   }, 500);
 }
 function applyDeptName(){
@@ -28027,6 +28149,7 @@ function buildCatOptions(selectedVal){
 }
 
 function openDeptSettings(){
+  if(!isAdmin){ alert('管理者としてログインしてください'); return; }
   const body = document.getElementById('modalBody');
   body.innerHTML = `
     <h3>⚙️ 設定</h3>
@@ -28040,6 +28163,16 @@ function openDeptSettings(){
         <button class="btn sm primary" onclick="saveDeptSettings()">保存</button>
       </div>
     </div>
+    <div style="border-bottom:1px solid var(--border);margin-bottom:14px;padding-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">メンバー管理</div>
+      <div id="member-edit-list" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="new-member-input" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--text)" placeholder="新しいメンバー名">
+        <input id="new-member-initial" style="width:50px;font-size:11px;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--text);text-transform:uppercase" placeholder="SK">
+        <button class="btn sm primary" onclick="addMemberFromSettings()">＋ 追加</button>
+      </div>
+      <div style="font-size:10px;color:var(--hint);margin-top:6px">※ イニシャルはログイン画面のアイコンに表示されます</div>
+    </div>
     <div>
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">カテゴリ管理</div>
       <div id="cat-list-edit" style="margin-bottom:8px"></div>
@@ -28052,8 +28185,58 @@ function openDeptSettings(){
     <div class="modal-footer">
       <button class="btn" onclick="closeOverlay()">閉じる</button>
     </div>`;
+  renderMemberEditList();
   renderCatEditList();
   document.getElementById('overlay').style.display='flex';
+}
+
+function renderMemberEditList(){
+  const el = document.getElementById('member-edit-list');
+  if(!el) return;
+  el.innerHTML = MEMBERS.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <input style="width:44px;font-size:11px;padding:4px 6px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);text-transform:uppercase"
+        value="${MEMBER_INITIALS[m]||''}" placeholder="SK" onchange="updateMemberInitial('${m}',this.value)">
+      <span style="flex:1;font-size:12px;color:var(--text)">${m}</span>
+      <button class="btn sm ghost" style="color:var(--neg)" onclick="removeMemberFromSettings(${i})" title="削除">✕</button>
+      ${i>0?`<button class="btn sm ghost" onclick="moveMemberSettings(${i},-1)">↑</button>`:'<span style="width:28px"></span>'}
+      ${i<MEMBERS.length-1?`<button class="btn sm ghost" onclick="moveMemberSettings(${i},1)">↓</button>`:'<span style="width:28px"></span>'}
+    </div>`).join('');
+}
+
+function addMemberFromSettings(){
+  const nameInp = document.getElementById('new-member-input');
+  const initInp = document.getElementById('new-member-initial');
+  const name = nameInp.value.trim();
+  const initial = initInp.value.trim().toUpperCase();
+  if(!name) return;
+  if(MEMBERS.includes(name)){ alert('同名のメンバーが既に存在します'); return; }
+  MEMBERS.push(name);
+  if(initial) MEMBER_INITIALS[name] = initial;
+  nameInp.value='';
+  initInp.value='';
+  saveMembers();
+  renderMemberEditList();
+}
+
+function removeMemberFromSettings(i){
+  if(!confirm(`「${MEMBERS[i]}」を削除しますか？`)) return;
+  MEMBERS.splice(i,1);
+  saveMembers();
+  renderMemberEditList();
+}
+
+function moveMemberSettings(i, dir){
+  const j = i+dir;
+  if(j<0||j>=MEMBERS.length) return;
+  [MEMBERS[i],MEMBERS[j]]=[MEMBERS[j],MEMBERS[i]];
+  saveMembers();
+  renderMemberEditList();
+}
+
+function updateMemberInitial(name, val){
+  MEMBER_INITIALS[name] = val.trim().toUpperCase();
+  renderMemberEditList();
 }
 
 function renderCatEditList(){
@@ -28122,19 +28305,33 @@ let currentWeek = WEEKS[0];
 let currentProjectId = null;
 
 function applyStoredData(stored){
-  if(stored && stored.projects && stored.projects.length > 0){
-    PROJECTS = stored.projects;
-    LOGS = stored.logs || {};
-    HIGHLIGHTS = stored.highlights || {};
-    REPORT_PICKS = stored.reportPicks || {};
-    if(stored.deptFull) DEPT_FULL = stored.deptFull;
-    if(stored.categories && stored.categories.length) CATEGORIES = stored.categories;
-  } else {
-    PROJECTS = JSON.parse(JSON.stringify(PROJECTS_DEFAULT));
-    LOGS = JSON.parse(JSON.stringify(LOGS_DEFAULT));
-    HIGHLIGHTS = {};
-    saveState();
+  if(stored){
+    // projectsが配列（旧形式）またはオブジェクト（新形式）の両方に対応
+    if(Array.isArray(stored.projects) && stored.projects.length > 0){
+      PROJECTS = stored.projects.filter(p=>p && p.id && p.cat !== undefined && p.name);
+    } else if(stored.projects && typeof stored.projects === 'object' && !Array.isArray(stored.projects)){
+      PROJECTS = Object.values(stored.projects).filter(p=>p && p.id && p.cat !== undefined && p.name);
+      PROJECTS.sort((a,b)=>a.id-b.id);
+    }
+    if(PROJECTS.length > 0){
+      LOGS = stored.logs || {};
+      HIGHLIGHTS = stored.highlights || {};
+      REPORT_PICKS = stored.reportPicks || {};
+      if(stored.deptFull) DEPT_FULL = stored.deptFull;
+      if(stored.categories && stored.categories.length) CATEGORIES = stored.categories;
+      // Firebaseのmembersを優先して反映
+      if(stored.members && Array.isArray(stored.members) && stored.members.length > 0){
+        MEMBERS = stored.members;
+        try{ localStorage.setItem('wr_members', JSON.stringify(MEMBERS)); }catch(e){}
+      }
+      return;
+    }
   }
+  // データなし（初回）：デフォルトデータを使用
+  PROJECTS = JSON.parse(JSON.stringify(PROJECTS_DEFAULT));
+  LOGS = JSON.parse(JSON.stringify(LOGS_DEFAULT));
+  HIGHLIGHTS = {};
+  saveState();
 }
 
 
@@ -28268,6 +28465,8 @@ function setLog(pid, week, progress, nextAction, hlType){
 // SIDEBAR
 // ────────────────────────────────────────────────────────
 function buildSidebar(){
+  // null混入を防ぐ安全弁
+  PROJECTS = PROJECTS.filter(p=>p && p.id && p.cat !== undefined && p.name);
   // CATEGORIESの順で表示（PROJECTS内の登場順に依存しない）
   const cats = CATEGORIES.filter(c=> PROJECTS.some(p=>p.cat===c));
   // CATEGORIESにないカテゴリ（カスタム追加分など）を末尾に追加
@@ -28311,25 +28510,169 @@ function filterByCat(cat, el){
 // ⑤ MY VIEW（メンバーリスト+タブ方式）
 // ────────────────────────────────────────────────────────
 let myOwner = '';
-let MEMBERS = []; // 表示メンバーリスト（編集可能）
+let isAdmin = false;
+const FB_ADMIN = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/admin_session';
+
+// イニシャルマスター（メンバー管理と連動）
+const MEMBER_INITIALS = {
+  '角岡':'SK','玉木':'NT','蔦澤':'GT','池田':'TI',
+  '佐々木':'TS','木下':'KK','増渕':'MM','額賀':'HN'
+};
+
+function getMemberInitial(name){
+  return MEMBER_INITIALS[name] || name.substring(0,2);
+}
+
+let MEMBERS = [];
 
 function loadMembers(){
+  // 固定順で設定（メンバー管理で編集した場合はlocalStorageを優先）
+  const DEFAULT_MEMBERS = ['角岡','玉木','蔦澤','池田','佐々木','木下','増渕','額賀'];
   try{
     const s = localStorage.getItem('wr_members');
-    if(s){ MEMBERS = JSON.parse(s); return; }
+    if(s){
+      const saved = JSON.parse(s);
+      // 保存済みメンバーが固定リストと一致する場合は固定順を使用
+      if(saved.length === DEFAULT_MEMBERS.length && DEFAULT_MEMBERS.every(m=>saved.includes(m))){
+        MEMBERS = DEFAULT_MEMBERS;
+      } else {
+        MEMBERS = saved;
+      }
+      return;
+    }
   }catch(e){}
-  // 初回：担当者一覧から自動構築
-  const EXCLUDE = ['貫渡'];
-  MEMBERS = [...new Set(
-    PROJECTS.filter(p=>p.status!=='closed')
-      .flatMap(p=>p.owner.split(/[・、\/]/).map(o=>o.replace(/[（）()]/g,'').trim()).filter(Boolean))
-      .filter(o=>o && !EXCLUDE.includes(o))
-  )].sort((a,b)=>a.localeCompare(b,'ja'));
+  MEMBERS = DEFAULT_MEMBERS;
   saveMembers();
 }
 
 function saveMembers(){
   try{ localStorage.setItem('wr_members', JSON.stringify(MEMBERS)); }catch(e){}
+  fbDB.put('members', MEMBERS);
+}
+
+// ────────────────────────────────────────────────────────
+// LOGIN
+// ────────────────────────────────────────────────────────
+let loginSelected = null;
+
+function initLoginScreen(){
+  document.getElementById('login-dept-name').textContent = DEPT_FULL;
+  // ローディング表示
+  const list = document.getElementById('login-member-list');
+  list.innerHTML = '<div style="font-size:11px;color:var(--hint);padding:8px 4px">読み込み中…</div>';
+  checkAdminSession(adminName=>{
+    list.innerHTML = '';
+    MEMBERS.forEach(name=>{
+      const initial = getMemberInitial(name);
+      const row = document.createElement('div');
+      row.className = 'member-row';
+      row.innerHTML = `<div class="member-avatar">${initial}</div><span class="member-name">${name}</span>`;
+      row.onclick = ()=>{
+        loginSelected = name;
+        list.querySelectorAll('.member-row').forEach(r=>r.classList.remove('selected'));
+        row.classList.add('selected');
+        const btnEnter = document.getElementById('btn-login-enter');
+        btnEnter.disabled = false;
+        btnEnter.style.opacity = '1';
+        btnEnter.style.cursor = 'pointer';
+        const btnAdmin = document.getElementById('btn-login-admin');
+        if(adminName){
+          btnAdmin.disabled = true;
+          btnAdmin.style.opacity = '0.4';
+          btnAdmin.style.cursor = 'not-allowed';
+          document.getElementById('admin-in-use-msg').textContent = `現在 ${adminName} さんが使用中です`;
+        } else {
+          btnAdmin.disabled = false;
+          btnAdmin.style.opacity = '1';
+          btnAdmin.style.cursor = 'pointer';
+          document.getElementById('admin-in-use-msg').textContent = '';
+        }
+      };
+      list.appendChild(row);
+    });
+  });
+}
+
+function checkAdminSession(callback){
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', `${FB_ADMIN}.json`, true);
+  xhr.onload = function(){
+    try{
+      const data = JSON.parse(xhr.responseText);
+      if(data && data.name && data.expiresAt > Date.now()){
+        callback(data.name);
+      } else {
+        // 期限切れまたは空の場合は自動削除
+        if(data) releaseAdminSession();
+        callback(null);
+      }
+    }catch(e){ callback(null); }
+  };
+  xhr.onerror = ()=>callback(null);
+  xhr.send();
+}
+
+function doLogin(admin){
+  if(!loginSelected) return;
+  myOwner = loginSelected;
+  try{ sessionStorage.setItem('wr_myowner', myOwner); }catch(e){}
+  isAdmin = admin;
+  if(admin){
+    const session = {name: loginSelected, expiresAt: Date.now() + 30*60*1000};
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', `${FB_ADMIN}.json`, true);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.send(JSON.stringify(session));
+    setTimeout(()=>releaseAdminSession(), 30*60*1000);
+    fbDB.writeLog('admin_login', `name:${loginSelected}`);
+  } else {
+    fbDB.writeLog('login', `name:${loginSelected}`);
+  }
+  document.getElementById('login-screen').style.display = 'none';
+  updateUserBadge();
+  applyAdminUI();
+}
+
+function doLogout(){
+  try{ sessionStorage.removeItem('wr_myowner'); }catch(e){}
+  if(isAdmin){
+    releaseAdminSession(()=>{
+      fbDB.writeLog('logout', `name:${myOwner} admin:${isAdmin}`);
+      myOwner = ''; isAdmin = false; loginSelected = null;
+      document.getElementById('login-screen').style.display = 'flex';
+      initLoginScreen();
+    });
+  } else {
+    fbDB.writeLog('logout', `name:${myOwner} admin:${isAdmin}`);
+    myOwner = ''; isAdmin = false; loginSelected = null;
+    document.getElementById('login-screen').style.display = 'flex';
+    initLoginScreen();
+  }
+}
+
+function releaseAdminSession(callback){
+  const xhr = new XMLHttpRequest();
+  xhr.open('DELETE', `${FB_ADMIN}.json`, true);
+  xhr.onload = ()=>{ if(callback) callback(); };
+  xhr.onerror = ()=>{ if(callback) callback(); };
+  xhr.send();
+}
+
+function updateUserBadge(){
+  const avatar = document.getElementById('user-avatar-icon');
+  const label = document.getElementById('user-name-label');
+  const badge = document.getElementById('current-user-badge');
+  if(!avatar) return;
+  avatar.textContent = getMemberInitial(myOwner);
+  label.textContent = myOwner + (isAdmin?' (管理者)':'');
+  if(isAdmin) badge.classList.add('admin-mode');
+  else badge.classList.remove('admin-mode');
+}
+
+function applyAdminUI(){
+  document.querySelectorAll('.admin-only').forEach(el=>{
+    el.style.display = isAdmin ? '' : 'none';
+  });
 }
 
 function showMyView(){
@@ -28355,12 +28698,12 @@ function buildMyViewTabs(){
 
 function selectMyViewMember(name){
   myOwner = name;
-  try{ localStorage.setItem('wr_myowner', name); }catch(e){}
+  try{ sessionStorage.setItem('wr_myowner', name); }catch(e){}
   buildMyViewTabs();
   renderMyView();
 }
 
-function saveMyOwner(val){ myOwner = val; try{ localStorage.setItem('wr_myowner', val); }catch(e){} }
+function saveMyOwner(val){ myOwner = val; try{ sessionStorage.setItem('wr_myowner', val); }catch(e){} }
 
 function renderMyView(){
   const el = document.getElementById('myviewList');
@@ -28409,52 +28752,6 @@ function openMemberSettings(){
   document.getElementById('overlay').style.display='flex';
 }
 
-function renderMemberEditList(){
-  const el = document.getElementById('member-list-edit');
-  if(!el) return;
-  el.innerHTML = MEMBERS.map((m,i)=>`
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-      <input style="flex:1;font-size:11px;padding:4px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text)"
-        value="${m}" id="mem-edit-${i}" onchange="updateMember(${i},this.value)">
-      <button class="btn sm ghost" style="color:var(--neg)" onclick="removeMember(${i})" title="削除">✕</button>
-      ${i>0?`<button class="btn sm ghost" onclick="moveMember(${i},-1)">↑</button>`:'<span style="width:28px"></span>'}
-      ${i<MEMBERS.length-1?`<button class="btn sm ghost" onclick="moveMember(${i},1)">↓</button>`:'<span style="width:28px"></span>'}
-    </div>`).join('');
-}
-
-function addMember(){
-  const inp = document.getElementById('new-member-input');
-  const val = inp.value.trim();
-  if(!val) return;
-  if(MEMBERS.includes(val)){ alert('同名のメンバーが既に存在します'); return; }
-  MEMBERS.push(val);
-  inp.value='';
-  saveMembers();
-  renderMemberEditList();
-}
-
-function updateMember(i, val){
-  if(!val.trim()) return;
-  MEMBERS[i] = val.trim();
-  saveMembers();
-  renderMemberEditList();
-}
-
-function removeMember(i){
-  if(!confirm(`「${MEMBERS[i]}」をメンバーから削除しますか？\n（案件データには影響しません）`)) return;
-  if(myOwner===MEMBERS[i]) myOwner = '';
-  MEMBERS.splice(i,1);
-  saveMembers();
-  renderMemberEditList();
-}
-
-function moveMember(i, dir){
-  const j = i+dir;
-  if(j<0||j>=MEMBERS.length) return;
-  [MEMBERS[i],MEMBERS[j]]=[MEMBERS[j],MEMBERS[i]];
-  saveMembers();
-  renderMemberEditList();
-}
 
 function filterSidebar(q){
   // カテゴリfilterをリセットしてリスト絞り込みのみ
@@ -28587,13 +28884,13 @@ function renderProjectCard(p){
   if(p.status==='closed') cls+=' closed';
   if(hl?.type==='pos') cls+=' has-hl-pos';
   if(hl?.type==='neg') cls+=' has-hl-neg';
-  const dotCls = p.status==='closed'?'dot-closed':log?.progress?'dot-ok':'dot-warn';
+  const dotCls = p.status==='closed'?'dot-closed':(log?.progress && stripHtml(log.progress).trim())?'dot-ok':'dot-warn';
   const ownerParts = splitOwners(p.owner);
   // 入力状況ラベル
   let inputBadge = '';
   if(p.status==='closed'){
     inputBadge = '';
-  } else if(log?.progress){
+  } else if(log?.progress && stripHtml(log.progress).trim()){
     inputBadge = '<span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>';
   } else {
     inputBadge = '<span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>';
@@ -28773,14 +29070,16 @@ function renderDetailLeft(p){
           <button class="rtb" title="標準" onclick="rfmt('fontSize','3')" style="font-size:11px">中</button>
           <button class="rtb" title="大" onclick="rfmt('fontSize','4')" style="font-size:13px">大</button>
         </div>
-        <div class="rich-editor" id="inp-progress" contenteditable="true">${log.progress||''}</div>
+        <div class="rich-editor" id="inp-progress" contenteditable="true"
+          onfocus="fbDB.writeLog('edit_start', 'pid:${p.id} week:${currentWeek}')"
+          oninput="enableSaveBtn()">${log.progress||''}</div>
       </div>
       <div class="input-row">
         <label>次のアクション</label>
-        <textarea id="inp-next" placeholder="来週やること・フォローアップ項目…" style="min-height:52px">${esc(log.nextAction)}</textarea>
+        <textarea id="inp-next" placeholder="来週やること・フォローアップ項目…" style="min-height:52px" oninput="enableSaveBtn()">${esc(log.nextAction)}</textarea>
       </div>
       <div class="input-actions">
-        <button class="btn sm primary" onclick="saveLog(${p.id})">保存</button>
+        <button class="btn sm primary" id="save-btn" onclick="saveLog(${p.id})" disabled style="opacity:0.4;cursor:not-allowed">保存</button>
         <div class="hl-toggle">
           <button class="hl-btn pos${hlType==='pos'?' on':''}" id="hl-pos-btn" onclick="toggleHL(${p.id},'pos')">☆ ポジ</button>
           <button class="hl-btn neg${hlType==='neg'?' on':''}" id="hl-neg-btn" onclick="toggleHL(${p.id},'neg')">★ ネガ</button>
@@ -28931,6 +29230,7 @@ function saveProjectMeta(id){
   p.cat = document.getElementById('ef-cat').value;
   p.summary = document.getElementById('ef-summary').value.trim();
   p.kpi = document.getElementById('ef-kpi').value.trim();
+  fbDB.put(`projects/${p.id}`, p);
   saveState();
   buildSidebar();
   buildOwnerSelect();
@@ -28942,14 +29242,36 @@ function rfmt(cmd, val){
   document.getElementById('inp-progress').focus();
   document.execCommand(cmd, false, val||null);
 }
+function enableSaveBtn(){
+  const btn = document.getElementById('save-btn');
+  if(!btn) return;
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+}
+
 function saveLog(pid){
   const progressEl = document.getElementById('inp-progress');
-  const progress = progressEl ? (progressEl.value !== undefined ? progressEl.value.trim() : progressEl.innerHTML.trim()) : '';
+  const rawProgress = progressEl ? (progressEl.value !== undefined ? progressEl.value.trim() : progressEl.innerHTML.trim()) : '';
+  // リッチエディタの<br>等だけの場合は空扱い
+  const progress = stripHtml(rawProgress).trim() ? rawProgress : '';
   const nextAction = document.getElementById('inp-next').value.trim();
   const existing = getLog(pid, currentWeek);
   const hlType = existing?.hlType||'';
+  const charsBefore = (existing?.progress||'').length;
   LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType};
+  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType});
+  fbDB.writeLog('edit_save', `pid:${pid} week:${currentWeek} chars_before:${charsBefore} chars_after:${progress.length}`);
   saveState();
+  // 保存ボタンをグレーに戻す＋完了表示
+  const btn = document.getElementById('save-btn');
+  if(btn){
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = '✓ 保存しました';
+    setTimeout(()=>{ btn.textContent = '保存'; }, 2000);
+  }
   renderDetail();
 }
 
@@ -28980,6 +29302,8 @@ function toggleHL(pid, type){
     log.hlType=type;
   }
   LOGS[logKey(pid,currentWeek)] = {...(getLog(pid,currentWeek)||{}), ...log};
+  fbDB.put(`highlights/${currentWeek}`, HIGHLIGHTS[currentWeek]||[]);
+  fbDB.put(`logs/${logKey(pid,currentWeek)}`, LOGS[logKey(pid,currentWeek)]);
   saveState();
   renderDetail();
 }
@@ -28987,14 +29311,16 @@ function toggleHL(pid, type){
 function deleteProject(){
   const p = PROJECTS.find(x=>x.id===currentProjectId);
   if(!p) return;
-  // 1段階目
   if(!confirm(`「${p.name}」を完全に削除しますか？\n\nこの操作はクローズとは異なり、元に戻せません。`)) return;
-  // 2段階目（誤操作防止）
   if(!confirm(`⚠️ 本当に削除しますか？\n「${p.name}」のすべての進捗データも削除されます。`)) return;
-  // PROJECTS・LOGS・HIGHLIGHTS・REPORT_PICKSから削除
+  fbDB.writeLog('project_delete', `pid:${p.id} name:${p.name}`);
   const idx = PROJECTS.findIndex(x=>x.id===currentProjectId);
   if(idx>=0) PROJECTS.splice(idx,1);
-  Object.keys(LOGS).filter(k=>k.startsWith(currentProjectId+'_')).forEach(k=>delete LOGS[k]);
+  fbDB.delete(`projects/${currentProjectId}`);
+  Object.keys(LOGS).filter(k=>k.startsWith(currentProjectId+'_')).forEach(k=>{
+    fbDB.delete(`logs/${k}`);
+    delete LOGS[k];
+  });
   Object.values(HIGHLIGHTS).forEach(hls=>{
     const i = hls.findIndex(h=>h.projectId===currentProjectId);
     if(i>=0) hls.splice(i,1);
@@ -29013,15 +29339,17 @@ function toggleProjectStatus(){
   const p = PROJECTS.find(x=>x.id===currentProjectId);
   if(!p) return;
   if(p.status==='closed'){
-    // 復活
     p.status='active';
+    fbDB.put(`projects/${p.id}`, p);
+    fbDB.writeLog('project_restore', `pid:${p.id} name:${p.name}`);
     saveState();
     buildSidebar();
     renderDetail();
   } else {
-    // 終了確認
     if(!confirm(`「${p.name}」をクローズしますか？\n\n一覧からは非表示になりますが、サイドバーの「終了案件」から確認・復活できます。`)) return;
     p.status='closed';
+    fbDB.put(`projects/${p.id}`, p);
+    fbDB.writeLog('project_close', `pid:${p.id} name:${p.name}`);
     saveState();
     buildSidebar();
     showList();
@@ -29045,13 +29373,19 @@ function renderReport(){
   const picks = REPORT_PICKS[currentWeek]||[];
   const el = document.getElementById('reportWrap');
   if(!el) return;
+  const hasEditing = picks.some(pk=>!pk.confirmed);
+  const allConfirmed = picks.length>0 && picks.every(pk=>pk.confirmed);
   el.innerHTML = `
     <div class="rp-week-sel">
       <label>対象週:</label>
       <select onchange="currentWeek=this.value;renderReport()">
         ${WEEKS.map(w=>`<option value="${w}"${w===currentWeek?' selected':''}>${weekLabel(w)}</option>`).join('')}
       </select>
-      <button class="btn sm primary" onclick="generateWord()">📝 Word生成（AI英訳）</button>
+      ${picks.length>0 && hasEditing
+        ? `<button class="btn sm primary" onclick="confirmAllPicks()" style="background:var(--pos);border-color:var(--pos)">💾 保存（編集を確定）</button>`
+        : ''
+      }
+      <button class="btn sm primary" onclick="generateWord()">📝 Word出力（.docx）</button>
     </div>
     ${picks.length===0
       ? '<div style="font-size:11px;color:var(--warn);padding:12px 0">プロジェクト詳細の「＋ Reportに追加」ボタンで案件を追加してください</div>'
@@ -29065,6 +29399,32 @@ function rpCard(pk, idx){
   const p = PROJECTS.find(x=>x.id===pk.projectId);
   const log = getLog(pk.projectId, currentWeek)||{};
   const hlType = pk.hlType||'';
+  const confirmed = !!pk.confirmed;
+
+  if(confirmed){
+    // ── 確定済み（読み取り専用）表示 ──
+    const hlLabel = hlType==='pos'?'☆ Positive':hlType==='neg'?'★ Concern':'— 分類なし';
+    const hlColor = hlType==='pos'?'var(--pos)':hlType==='neg'?'var(--neg)':'var(--muted)';
+    return `<div class="rp-card${hlType==='neg'?' neg':''}" id="rp-card-${idx}"
+        style="opacity:0.92;position:relative">
+      <div style="position:absolute;top:8px;right:10px;display:flex;gap:6px;align-items:center">
+        <span style="font-size:9px;background:var(--pos-bg);color:var(--pos);padding:2px 7px;border-radius:8px;font-weight:600">✓ 出力済</span>
+        <button class="btn sm" style="font-size:10px;padding:2px 8px"
+          onclick="unconfirmPick(${idx})">✏️ 再編集</button>
+        <button class="btn sm" style="color:var(--neg);font-size:10px;padding:2px 8px"
+          onclick="removePick(${idx})">削除</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-right:180px">
+        <span style="font-size:10px;color:${hlColor}">${hlLabel}</span>
+        <strong style="font-size:12px">${p?.name||'—'}</strong>
+        <span style="font-size:10px;color:var(--muted)">${p?.cat||''}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text);background:var(--bg);padding:8px 10px;border-radius:var(--rad);white-space:pre-wrap;line-height:1.65;border:1px solid var(--border)">${esc(stripHtml(pk.editedText||log.progress||''))}</div>
+      ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:6px">→ 次のアクション: ${esc(stripHtml(log.nextAction))}</div>`:''}
+    </div>`;
+  }
+
+  // ── 通常（編集中）表示 ──
   return `<div class="rp-card${hlType==='neg'?' neg':''}" id="rp-card-${idx}">
     <div class="rp-card-title" style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <select style="font-size:10px;padding:2px 6px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);color:var(--text)"
@@ -29079,12 +29439,25 @@ function rpCard(pk, idx){
         onclick="removePick(${idx})">削除</button>
     </div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:4px">元の進捗（参照用）:</div>
-    <div style="font-size:11px;color:var(--muted);background:var(--bg);padding:6px 8px;border-radius:var(--rad);margin-bottom:8px;white-space:pre-wrap;max-height:80px;overflow-y:auto">${esc((log.progress||'').substring(0,200))}${(log.progress||'').length>200?'…':''}</div>
+    <div style="font-size:11px;color:var(--muted);background:var(--bg);padding:6px 8px;border-radius:var(--rad);margin-bottom:8px;white-space:pre-wrap;max-height:80px;overflow-y:auto">${stripHtml((log.progress||'').substring(0,200))}${(log.progress||'').length>200?'…':''}</div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Weekly Report掲載テキスト（自由編集）:</div>
     <textarea style="width:100%;font-size:11px;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;min-height:80px;line-height:1.6"
-      oninput="updatePickText(${idx},this.value)">${esc(pk.editedText||log.progress||'')}</textarea>
-    ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:4px">→ 次のアクション: ${esc(log.nextAction)}</div>`:''}
+      oninput="updatePickText(${idx},this.value)">${esc(stripHtml(pk.editedText||log.progress||''))}</textarea>
+    ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:4px">→ 次のアクション: ${esc(stripHtml(log.nextAction))}</div>`:''}
   </div>`;
+}
+
+function confirmAllPicks(){
+  (REPORT_PICKS[currentWeek]||[]).forEach(pk=>{ pk.confirmed = true; });
+  saveState();
+  renderReport();
+}
+
+function unconfirmPick(idx){
+  const picks = REPORT_PICKS[currentWeek]||[];
+  if(picks[idx]) picks[idx].confirmed = false;
+  saveState();
+  renderReport();
 }
 
 function updatePickText(idx, val){
@@ -29104,7 +29477,14 @@ function updatePickHL(idx, val){
 
 function removePick(idx){
   const picks = REPORT_PICKS[currentWeek]||[];
+  const removed = picks[idx];
   picks.splice(idx,1);
+  // HIGHLIGHTSからも削除（緑/赤ボーダーを消す）
+  if(removed){
+    const hls = HIGHLIGHTS[currentWeek]||[];
+    const hi = hls.findIndex(h=>h.projectId===removed.projectId);
+    if(hi>=0) hls.splice(hi,1);
+  }
   saveState();
   updateReportBadge();
   renderReport();
@@ -29160,7 +29540,8 @@ async function generateWord(){
     for(const pk of picks_data){
       const p = PROJECTS.find(x=>x.id===pk.projectId);
       const log = getLog(pk.projectId, currentWeek)||{};
-      const text = pk.editedText||log.progress||'';
+      const text = stripHtml(pk.editedText||log.progress||'');
+      const nextActionText = stripHtml(log.nextAction||'');
       const hlType = pk.hlType||'';
       const icon = hlType==='pos'?'☆ ':hlType==='neg'?'★ ':'';
       const color = hlType==='pos'?'1a5c3a':hlType==='neg'?'8b1a1a':'333333';
@@ -29184,12 +29565,12 @@ async function generateWord(){
       }
 
       // 次のアクション
-      if(log.nextAction){
+      if(nextActionText){
         children.push(new Paragraph({
           spacing: { after: 100 },
           children: [
             new TextRun({ text: '→ 次のアクション: ', size: 18, color: '4a7ab5', bold: true, font: 'Yu Gothic' }),
-            new TextRun({ text: log.nextAction, size: 18, color: '4a7ab5', font: 'Yu Gothic' })
+            new TextRun({ text: nextActionText, size: 18, color: '4a7ab5', font: 'Yu Gothic' })
           ]
         }));
       }
@@ -29295,7 +29676,7 @@ function addProject(){
   const ownerParts = [...checked, ...(free ? [free] : [])];
   const owner = ownerParts.join('・');
   const newId = Math.max(...PROJECTS.map(p=>p.id))+1;
-  PROJECTS.push({
+  const newProject = {
     id:newId,
     cat:document.getElementById('m-cat').value,
     name,
@@ -29303,7 +29684,9 @@ function addProject(){
     summary:document.getElementById('m-summary').value.trim(),
     kpi:document.getElementById('m-kpi').value.trim(),
     status:'active'
-  });
+  };
+  PROJECTS.push(newProject);
+  fbDB.put(`projects/${newId}`, newProject);
   saveState();
   buildSidebar();
   buildOwnerSelect();
@@ -29314,6 +29697,22 @@ function addProject(){
 // ────────────────────────────────────────────────────────
 // UTILS
 // ────────────────────────────────────────────────────────
+function stripHtml(html){
+  if(!html) return '';
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function esc(str){
   return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -29325,27 +29724,111 @@ function closeOverlay(e){
 // ────────────────────────────────────────────────────────
 // BOOT（Firebase REST API読み込み）
 // ────────────────────────────────────────────────────────
+// ブラウザを閉じる時の処理
+window.addEventListener('beforeunload', function(e){
+  if(isAdmin){
+    releaseAdminSession();
+    // 確認ダイアログを表示（管理者の場合のみ）
+    e.preventDefault();
+    e.returnValue = '管理者セッションが解除されます。退室しますか？';
+    return e.returnValue;
+  }
+});
+
 // ────────────────────────────────────────────────────────
 // BOOT（DOMContentLoaded後に実行）
 // ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
+  // Firebase取得中のローディング表示
+  const loadingEl = document.createElement('div');
+  loadingEl.id = '_boot-loading';
+  loadingEl.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9990;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px';
+  loadingEl.innerHTML = `
+    <div style="width:28px;height:28px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+    <div style="font-size:12px;color:var(--muted)">データを読み込み中…</div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(loadingEl);
+
   fbDB.get(function(err, data){
-    const isFirebaseData = !err && data && data.projects && data.projects.length > 0;
-    applyStoredData(isFirebaseData ? data : loadState());
-    initApp(isFirebaseData);
+    try {
+      const isFirebaseData = !err && data && data.projects && Object.keys(data.projects).length > 0;
+      applyStoredData(isFirebaseData ? data : loadState());
+      initApp(isFirebaseData);
+      fbDB.writeLog('boot', `firebase:${isFirebaseData} projects:${PROJECTS.length}`);
+      startPolling();
+    } catch(e) {
+      console.error('Boot error:', e);
+      try { showToast('読み込みエラー: ' + e.message); } catch(_){}
+    } finally {
+      loadingEl.remove();
+    }
   });
 });
 
+// ────────────────────────────────────────────────────────
+// バックグラウンドポーリング（30秒ごとにFirebaseを確認）
+// ────────────────────────────────────────────────────────
+let _pollingTimer = null;
+function startPolling(){
+  if(_pollingTimer) return;
+  _pollingTimer = setInterval(function(){
+    // 未ログイン中・モーダル開いてるときはスキップ
+    if(!myOwner) return;
+    if(document.getElementById('overlay')?.style.display === 'flex') return;
+    fbDB.get(function(err, data){
+      if(err || !data) return;
+      // プロジェクト数・最終更新タイムスタンプで差分を簡易チェック
+      const remoteProjects = data.projects ? Object.values(data.projects) : [];
+      const remoteHash = remoteProjects.length + '|' + (data._ts||'');
+      const localHash  = PROJECTS.length + '|' + (window._lastTs||'');
+      if(remoteHash === localHash) return; // 差分なしはスキップ
+      window._lastTs = data._ts||'';
+      // 差分あり：データ更新して再描画（編集中のdetailは閉じない）
+      applyStoredData(data);
+      renderList();
+      updateReportBadge();
+      showToast('データを更新しました');
+    });
+  }, 30000);
+}
+
+function showToast(msg){
+  let t = document.getElementById('_toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = '_toast';
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;padding:7px 16px;border-radius:20px;z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.opacity='0'; }, 2500);
+}
+
 function initApp(isFirebaseData){
-  // currentWeekを常に最新週に設定
   currentWeek = WEEKS[0];
   buildSidebar();
   showList();
   applyDeptName();
   loadMembers();
-  try{ myOwner = localStorage.getItem('wr_myowner')||''; }catch(e){}
+  try{ myOwner = sessionStorage.getItem('wr_myowner')||''; }catch(e){}
   if(!isFirebaseData && PROJECTS.length > 0){
     saveState();
+  }
+  if(!MEMBERS.length){
+    MEMBERS = ['角岡','玉木','蔦澤','池田','佐々木','木下','増渕','額賀'];
+    saveMembers();
+  }
+  // localStorageにログイン情報が残っていればログイン画面をスキップ
+  if(myOwner && MEMBERS.includes(myOwner)){
+    // localStorage復元：ログイン画面スキップ
+    updateUserBadge();
+    applyAdminUI();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    initLoginScreen();
   }
 }
 </script>
