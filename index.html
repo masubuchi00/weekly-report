@@ -29129,12 +29129,16 @@ function initLoginScreen(){
   // （再読み込み等でsessionStorageが消えた場合の残留セッションを解放）
   try{
     if(!sessionStorage.getItem('wr_myowner')){
-      releaseAdminSession();
+      releaseAdminSession(()=>{ checkAdminSession(adminName=>{ renderMemberList(list, adminName); }); });
+      return;
     }
   }catch(e){}
-  checkAdminSession(adminName=>{
-    list.innerHTML = '';
-    MEMBERS.forEach(name=>{
+  checkAdminSession(adminName=>{ renderMemberList(list, adminName); });
+}
+
+function renderMemberList(list, adminName){
+  list.innerHTML = '';
+  MEMBERS.forEach(name=>{
       const initial = getMemberInitial(name);
       const row = document.createElement('div');
       row.className = 'member-row';
@@ -29162,7 +29166,6 @@ function initLoginScreen(){
       };
       list.appendChild(row);
     });
-  });
 }
 
 function checkAdminSession(callback){
