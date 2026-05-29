@@ -29316,6 +29316,7 @@ function deleteProject(){
   fbDB.writeLog('project_delete', `pid:${p.id} name:${p.name}`);
   const idx = PROJECTS.findIndex(x=>x.id===currentProjectId);
   if(idx>=0) PROJECTS.splice(idx,1);
+  window._lastTs = String(Date.now());
   fbDB.delete(`projects/${currentProjectId}`);
   Object.keys(LOGS).filter(k=>k.startsWith(currentProjectId+'_') && k.split('_')[0]==currentProjectId).forEach(k=>{
     fbDB.delete(`logs/${k}`);
@@ -29779,26 +29780,24 @@ function startPolling(){
     if(document.getElementById('overlay')?.style.display === 'flex') return;
     fbDB.get(function(err, data){
       if(err || !data) return;
-      const remoteProjects = data.projects ? Object.values(data.projects) : [];
-      // _tsとプロジェクトのstatus一覧を合わせてハッシュ化
-      const remoteHash = remoteProjects.length + '|' + (data._ts||'') + '|' +
-        remoteProjects.map(p=>p&&p.id+'='+p.status).sort().join(',');
-      const localHash = PROJECTS.length + '|' + (window._lastTs||'') + '|' +
-        PROJECTS.map(p=>p.id+'='+p.status).sort().join(',');
-      if(remoteHash === localHash) return;
-      window._lastTs = data._ts||'';
-      // isAdmin/myOwnerを保持したままデータ更新
-      const savedOwner = myOwner;
-      const savedAdmin = isAdmin;
-      applyStoredData(data);
-      myOwner = savedOwner;
-      isAdmin = savedAdmin;
+      const remoteTs = data._ts||'';
+      if(remoteTs === (window._lastTs||'')) return; // _tsが同じならスキップ
+      window._lastTs = remoteTs;
+      // projectsは上書きしない（自分の操作が消えるのを防ぐ）
+      // logsとhighlightsのみ他メンバーの更新を反映
+      if(data.logs) LOGS = data.logs;
+      if(data.highlights) HIGHLIGHTS = data.highlights;
+      if(data.reportPicks) REPORT_PICKS = data.reportPicks;
       renderList();
       updateReportBadge();
       showToast('データを更新しました');
     });
   }, 30000);
 }
+
+window.addEventListener('pagehide', function(){
+  try{ sessionStorage.removeItem('wr_myowner'); }catch(e){}
+});
 
 function showToast(msg){
   let t = document.getElementById('_toast');
