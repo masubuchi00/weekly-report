@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/i048260/Downloads/index_13.html -->
+<!-- saved from url=(0048)file:///C:/Users/i048260/Downloads/index_14.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -234,13 +234,13 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="login-card">
       <div class="login-label">メンバーを選択</div>
-      <div id="login-member-list"><div class="member-row" data-name="角岡" onclick="selectMember(&#39;角岡&#39;)"><div class="member-avatar">SK</div><span class="member-name">角岡</span></div><div class="member-row" data-name="玉木" onclick="selectMember(&#39;玉木&#39;)"><div class="member-avatar">NT</div><span class="member-name">玉木</span></div><div class="member-row" data-name="蔦澤" onclick="selectMember(&#39;蔦澤&#39;)"><div class="member-avatar">GT</div><span class="member-name">蔦澤</span></div><div class="member-row" data-name="池田" onclick="selectMember(&#39;池田&#39;)"><div class="member-avatar">TI</div><span class="member-name">池田</span></div><div class="member-row" data-name="佐々木" onclick="selectMember(&#39;佐々木&#39;)"><div class="member-avatar">TS</div><span class="member-name">佐々木</span></div><div class="member-row" data-name="木下" onclick="selectMember(&#39;木下&#39;)"><div class="member-avatar">KK</div><span class="member-name">木下</span></div><div class="member-row" data-name="増渕" onclick="selectMember(&#39;増渕&#39;)"><div class="member-avatar">MM</div><span class="member-name">増渕</span></div><div class="member-row" data-name="額賀" onclick="selectMember(&#39;額賀&#39;)"><div class="member-avatar">HN</div><span class="member-name">額賀</span></div></div>
-      <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(false)">入室する</button>
+      <div id="login-member-list"><div class="member-row" data-name="角岡" onclick="selectMember(&#39;角岡&#39;)"><div class="member-avatar">SK</div><span class="member-name">角岡</span></div><div class="member-row" data-name="玉木" onclick="selectMember(&#39;玉木&#39;)"><div class="member-avatar">NT</div><span class="member-name">玉木</span></div><div class="member-row" data-name="蔦澤" onclick="selectMember(&#39;蔦澤&#39;)"><div class="member-avatar">GT</div><span class="member-name">蔦澤</span></div><div class="member-row" data-name="池田" onclick="selectMember(&#39;池田&#39;)"><div class="member-avatar">TI</div><span class="member-name">池田</span></div><div class="member-row" data-name="佐々木" onclick="selectMember(&#39;佐々木&#39;)"><div class="member-avatar">TS</div><span class="member-name">佐々木</span></div><div class="member-row" data-name="木下" onclick="selectMember(&#39;木下&#39;)"><div class="member-avatar">KK</div><span class="member-name">木下</span></div><div class="member-row selected" data-name="増渕" onclick="selectMember(&#39;増渕&#39;)"><div class="member-avatar">MM</div><span class="member-name">増渕</span></div><div class="member-row" data-name="額賀" onclick="selectMember(&#39;額賀&#39;)"><div class="member-avatar">HN</div><span class="member-name">額賀</span></div></div>
+      <button id="btn-login-enter" class="btn primary" style="width: 100%; margin-top: 10px; opacity: 1; cursor: pointer;" onclick="doLogin(false)">入室する</button>
     </div>
     <div class="login-card">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:12px;font-weight:500;color:var(--text)">⚙️ 管理者として入室</div>
-        <button id="btn-login-admin" class="btn sm" style="opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(true)">入室する</button>
+        <button id="btn-login-admin" class="btn sm" style="opacity: 1; cursor: pointer;" onclick="doLogin(true)">入室する</button>
       </div>
       <div id="admin-in-use-msg" class="login-admin-status"></div>
     </div>
@@ -28857,8 +28857,17 @@ function applyStoredData(stored){
     if(Array.isArray(stored.projects) && stored.projects.length > 0){
       PROJECTS = stored.projects.filter(p=>p && p.id && p.cat !== undefined && p.name).map(p=>({...p, id:Number(p.id)}));
     } else if(stored.projects && typeof stored.projects === 'object' && !Array.isArray(stored.projects)){
-      PROJECTS = Object.values(stored.projects).filter(p=>p && p.id && p.cat !== undefined && p.name).map(p=>({...p, id:Number(p.id)}));
-      PROJECTS.sort((a,b)=>a.id-b.id);
+      const projectMap = {};
+      Object.entries(stored.projects).forEach(([key, p])=>{
+        if(!p || !p.id || p.cat===undefined || !p.name) return;
+        const id = Number(p.id);
+        const keyNum = Number(key);
+        // keyとidが一致するものを優先（fbDB.putで正しく保存されたデータ）
+        if(!projectMap[id] || keyNum===id){
+          projectMap[id] = {...p, id};
+        }
+      });
+      PROJECTS = Object.values(projectMap).sort((a,b)=>a.id-b.id);
     }
     // 重複IDを除去（Firebaseのキーとプロジェクトidが混在した場合の対策）
     const seen = new Set();
