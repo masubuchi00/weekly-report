@@ -28308,9 +28308,9 @@ function applyStoredData(stored){
   if(stored){
     // projectsが配列（旧形式）またはオブジェクト（新形式）の両方に対応
     if(Array.isArray(stored.projects) && stored.projects.length > 0){
-      PROJECTS = stored.projects.filter(p=>p && p.id && p.cat !== undefined && p.name);
+      PROJECTS = stored.projects.filter(p=>p && p.id && p.cat !== undefined && p.name).map(p=>({...p, id:Number(p.id)}));
     } else if(stored.projects && typeof stored.projects === 'object' && !Array.isArray(stored.projects)){
-      PROJECTS = Object.values(stored.projects).filter(p=>p && p.id && p.cat !== undefined && p.name);
+      PROJECTS = Object.values(stored.projects).filter(p=>p && p.id && p.cat !== undefined && p.name).map(p=>({...p, id:Number(p.id)}));
       PROJECTS.sort((a,b)=>a.id-b.id);
     }
     if(PROJECTS.length > 0){
@@ -29317,7 +29317,7 @@ function deleteProject(){
   const idx = PROJECTS.findIndex(x=>x.id===currentProjectId);
   if(idx>=0) PROJECTS.splice(idx,1);
   fbDB.delete(`projects/${currentProjectId}`);
-  Object.keys(LOGS).filter(k=>k.startsWith(currentProjectId+'_')).forEach(k=>{
+  Object.keys(LOGS).filter(k=>k.startsWith(currentProjectId+'_') && k.split('_')[0]==currentProjectId).forEach(k=>{
     fbDB.delete(`logs/${k}`);
     delete LOGS[k];
   });
