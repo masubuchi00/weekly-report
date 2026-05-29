@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0047)file:///C:/Users/i048260/Downloads/index_5.html -->
+<!-- saved from url=(0047)file:///C:/Users/i048260/Downloads/index_7.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -885,6 +885,15 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     
     <span class="pl-cat">⑤</span>
     <span class="pl-name">国総研　中州様対応</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="60" onclick="openDetail(60)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト②</span>
     <span class="pl-owner-col"></span>
     <div class="pl-status">
       
@@ -29122,18 +29131,13 @@ let loginSelected = null;
 
 function initLoginScreen(){
   document.getElementById('login-dept-name').textContent = DEPT_FULL;
-  // ローディング表示
   const list = document.getElementById('login-member-list');
   list.innerHTML = '<div style="font-size:11px;color:var(--hint);padding:8px 4px">読み込み中…</div>';
-  // sessionStorageに管理者情報がない場合はFirebaseのadmin_sessionをクリア
-  // （再読み込み等でsessionStorageが消えた場合の残留セッションを解放）
-  try{
-    if(!sessionStorage.getItem('wr_myowner')){
-      releaseAdminSession(()=>{ checkAdminSession(adminName=>{ renderMemberList(list, adminName); }); });
-      return;
-    }
-  }catch(e){}
-  checkAdminSession(adminName=>{ renderMemberList(list, adminName); });
+  // sessionStorageをクリアしてFirebaseのadmin_sessionも解放
+  try{ sessionStorage.removeItem('wr_myowner'); }catch(e){}
+  releaseAdminSession(()=>{
+    checkAdminSession(adminName=>{ renderMemberList(list, adminName); });
+  });
 }
 
 function renderMemberList(list, adminName){
