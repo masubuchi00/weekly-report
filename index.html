@@ -28942,7 +28942,7 @@ function renderArchive(){
 }
 
 function openDetailFromArchive(pid){
-  currentProjectId = pid;
+  currentProjectId = Number(pid);
   document.getElementById('view-archive').style.display='none';
   document.getElementById('view-detail').style.display='block';
   ['nav-list','nav-report','nav-archive'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
@@ -28957,7 +28957,7 @@ function openDetailFromArchive(pid){
 // DETAIL VIEW
 // ────────────────────────────────────────────────────────
 function openDetail(pid){
-  currentProjectId = pid;
+  currentProjectId = Number(pid);
   ['list','detail','report','archive'].forEach(v=>{
     document.getElementById('view-'+v).style.display = v==='detail'?'block':'none';
   });
@@ -29340,6 +29340,7 @@ function toggleProjectStatus(){
   if(!p) return;
   if(p.status==='closed'){
     p.status='active';
+    window._lastTs = String(Date.now());
     fbDB.put(`projects/${p.id}`, p);
     fbDB.writeLog('project_restore', `pid:${p.id} name:${p.name}`);
     saveState();
@@ -29348,6 +29349,7 @@ function toggleProjectStatus(){
   } else {
     if(!confirm(`「${p.name}」をクローズしますか？\n\n一覧からは非表示になりますが、サイドバーの「終了案件」から確認・復活できます。`)) return;
     p.status='closed';
+    window._lastTs = String(Date.now());
     fbDB.put(`projects/${p.id}`, p);
     fbDB.writeLog('project_close', `pid:${p.id} name:${p.name}`);
     saveState();
@@ -29773,19 +29775,24 @@ let _pollingTimer = null;
 function startPolling(){
   if(_pollingTimer) return;
   _pollingTimer = setInterval(function(){
-    // 未ログイン中・モーダル開いてるときはスキップ
     if(!myOwner) return;
     if(document.getElementById('overlay')?.style.display === 'flex') return;
     fbDB.get(function(err, data){
       if(err || !data) return;
-      // プロジェクト数・最終更新タイムスタンプで差分を簡易チェック
       const remoteProjects = data.projects ? Object.values(data.projects) : [];
-      const remoteHash = remoteProjects.length + '|' + (data._ts||'');
-      const localHash  = PROJECTS.length + '|' + (window._lastTs||'');
-      if(remoteHash === localHash) return; // 差分なしはスキップ
+      // _tsとプロジェクトのstatus一覧を合わせてハッシュ化
+      const remoteHash = remoteProjects.length + '|' + (data._ts||'') + '|' +
+        remoteProjects.map(p=>p&&p.id+'='+p.status).sort().join(',');
+      const localHash = PROJECTS.length + '|' + (window._lastTs||'') + '|' +
+        PROJECTS.map(p=>p.id+'='+p.status).sort().join(',');
+      if(remoteHash === localHash) return;
       window._lastTs = data._ts||'';
-      // 差分あり：データ更新して再描画（編集中のdetailは閉じない）
+      // isAdmin/myOwnerを保持したままデータ更新
+      const savedOwner = myOwner;
+      const savedAdmin = isAdmin;
       applyStoredData(data);
+      myOwner = savedOwner;
+      isAdmin = savedAdmin;
       renderList();
       updateReportBadge();
       showToast('データを更新しました');
