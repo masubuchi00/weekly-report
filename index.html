@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0047)file:///C:/Users/i048260/Downloads/index_3.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>週次進捗管理</title>
 <style>
@@ -226,7 +226,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 <body>
 
 <!-- ===== LOGIN SCREEN ===== -->
-<div id="login-screen" style="display:none">
+<div id="login-screen" style="display: flex;">
   <div class="login-wrap">
     <div class="login-title">
       <h1>プロジェクト進捗管理</h1>
@@ -234,13 +234,13 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="login-card">
       <div class="login-label">メンバーを選択</div>
-      <div id="login-member-list"></div>
-      <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled onclick="doLogin(false)">入室する</button>
+      <div id="login-member-list"><div class="member-row"><div class="member-avatar">SK</div><span class="member-name">角岡</span></div><div class="member-row"><div class="member-avatar">NT</div><span class="member-name">玉木</span></div><div class="member-row"><div class="member-avatar">GT</div><span class="member-name">蔦澤</span></div><div class="member-row"><div class="member-avatar">TI</div><span class="member-name">池田</span></div><div class="member-row"><div class="member-avatar">TS</div><span class="member-name">佐々木</span></div><div class="member-row"><div class="member-avatar">KK</div><span class="member-name">木下</span></div><div class="member-row"><div class="member-avatar">MM</div><span class="member-name">増渕</span></div><div class="member-row"><div class="member-avatar">HN</div><span class="member-name">額賀</span></div></div>
+      <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(false)">入室する</button>
     </div>
     <div class="login-card">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:12px;font-weight:500;color:var(--text)">⚙️ 管理者として入室</div>
-        <button id="btn-login-admin" class="btn sm" style="opacity:0.4;cursor:not-allowed" disabled onclick="doLogin(true)">入室する</button>
+        <button id="btn-login-admin" class="btn sm" style="opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(true)">入室する</button>
       </div>
       <div id="admin-in-use-msg" class="login-admin-status"></div>
     </div>
@@ -269,20 +269,40 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <div class="sb-label">ビュー</div>
     <div class="sb-item active" id="nav-list" onclick="showList()">
       <span>◫</span> プロジェクト一覧
-      <span class="sb-count" id="cnt-active">0</span>
+      <span class="sb-count" id="cnt-active">31</span>
     </div>
     <div class="sb-item" id="nav-myview" onclick="showMyView()">
       <span>👤</span> マイビュー
     </div>
     <div class="sb-item" id="nav-report" onclick="showReport()">
       <span>◈</span> SIB Weekly Report出力
-      <span class="sb-count" id="report-badge" style="display:none;background:var(--accent);color:#fff"></span>
+      <span class="sb-count" id="report-badge" style="background: var(--accent); color: rgb(255, 255, 255);">1</span>
     </div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-section" style="flex:1;overflow-y:auto">
     <div class="sb-label">カテゴリ</div>
-    <div id="sbCatList"></div>
+    <div id="sbCatList"><div class="sb-item" onclick="filterByCat(&#39;①新規事業創出&#39;,this)">
+      <span style="font-size:9px">①</span>
+      <span style="flex:1;font-size:10px">新規事業創出</span>
+      <span class="sb-count">2</span>
+    </div><div class="sb-item" onclick="filterByCat(&#39;②アジア向けソフトウェア&#39;,this)">
+      <span style="font-size:9px">②</span>
+      <span style="flex:1;font-size:10px">アジア向けソフトウェア</span>
+      <span class="sb-count">10</span>
+    </div><div class="sb-item" onclick="filterByCat(&#39;③市場開拓&#39;,this)">
+      <span style="font-size:9px">③</span>
+      <span style="flex:1;font-size:10px">市場開拓</span>
+      <span class="sb-count">9</span>
+    </div><div class="sb-item" onclick="filterByCat(&#39;④機材販売&#39;,this)">
+      <span style="font-size:9px">④</span>
+      <span style="flex:1;font-size:10px">機材販売</span>
+      <span class="sb-count">2</span>
+    </div><div class="sb-item" onclick="filterByCat(&#39;⑤その他&#39;,this)">
+      <span style="font-size:9px">⑤</span>
+      <span style="flex:1;font-size:10px">その他</span>
+      <span class="sb-count">8</span>
+    </div></div>
   </div>
   <div class="sb-footer">
     <button class="btn admin-only" style="width:100%;font-size:10px;display:none" onclick="openAddProject()">＋ プロジェクト追加</button>
@@ -305,18 +325,13 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
   </div>
 
   <!-- LIST VIEW -->
-  <div id="view-list">
+  <div id="view-list" style="display: block;">
     <div class="topbar">
-      <span class="topbar-title">プロジェクト一覧 <span id="list-count-label" style="font-size:11px;font-weight:400;color:var(--muted)"></span></span>
+      <span class="topbar-title">プロジェクト一覧 <span id="list-count-label" style="font-size:11px;font-weight:400;color:var(--muted)">進行中 31件</span></span>
       <div class="filter-row" style="margin:0">
-        <select id="fWeek" onchange="currentWeek=this.value;renderList()" style="font-weight:500;color:var(--accent)">
-        </select>
-        <select id="fCat" onchange="renderList()">
-          <option value="">全カテゴリ</option>
-        </select>
-        <select id="fOwner" onchange="renderList()">
-          <option value="">全担当者</option>
-        </select>
+        <select id="fWeek" onchange="currentWeek=this.value;renderList()" style="font-weight:500;color:var(--accent)"><option value="25th_May" selected="">2026年5月25日</option><option value="18th_May">2026年5月18日</option><option value="11th_May">2026年5月11日</option><option value="4th_May">2026年5月4日</option><option value="27th_April">2026年4月27日</option><option value="20th_April">2026年4月20日</option><option value="13th_April">2026年4月13日</option><option value="6th_April">2026年4月6日</option><option value="30th_March">2026年3月30日</option><option value="23rd_March">2026年3月23日</option><option value="16th_March">2026年3月16日</option><option value="9th_March">2026年3月9日</option><option value="2nd_March">2026年3月2日</option><option value="24th_February">2026年2月24日</option><option value="16th_February">2026年2月16日</option><option value="9th_February">2026年2月9日</option><option value="2nd_February">2026年2月2日</option><option value="26th_January">2026年1月26日</option><option value="19th_January">2026年1月19日</option><option value="13rd_January">2026年1月13日</option><option value="5th_January">2026年1月5日</option><option value="24th_December">2025年12月24日</option><option value="22nd_December">2025年12月22日</option><option value="17th_December">2025年12月17日</option><option value="10th_December">2025年12月10日</option><option value="2nd_December">2025年12月2日</option><option value="26th_November">2025年11月26日</option><option value="19th_November">2025年11月19日</option><option value="12th_November">2025年11月12日</option><option value="5th_November">2025年11月5日</option><option value="29th_October">2025年10月29日</option><option value="22nd_October">2025年10月22日</option><option value="15th_October">2025年10月15日</option><option value="8th_October">2025年10月8日</option><option value="1st_October">2025年10月1日</option><option value="25th_September">2025年9月25日</option><option value="17th_September">2025年9月17日</option><option value="10th_September">2025年9月10日</option><option value="5th_September">2025年9月5日</option><option value="27th_August">2025年8月27日</option><option value="20th_August">2025年8月20日</option><option value="6th_August">2025年8月6日</option><option value="30th_July">2025年7月30日</option><option value="22nd_July">2025年7月22日</option><option value="15th_July">2025年7月15日</option><option value="8th_July">2025年7月8日</option><option value="1st_July">2025年7月1日</option><option value="25th_Jun">2025年6月25日</option><option value="17th_Jun">2025年6月17日</option><option value="10th_Jun">2025年6月10日</option><option value="3rd_Jun">2025年6月3日</option><option value="27th_May">2025年5月27日</option><option value="21st_May">2025年5月21日</option><option value="15th_May">2025年5月15日</option><option value="9th_May">2025年5月9日</option></select>
+        <select id="fCat" onchange="renderList()"><option value="">全カテゴリ</option><option value="①新規事業創出">①新規事業創出</option><option value="②アジア向けソフトウェア">②アジア向けソフトウェア</option><option value="③市場開拓">③市場開拓</option><option value="④機材販売">④機材販売</option><option value="⑤その他">⑤その他</option></select>
+        <select id="fOwner" onchange="renderList()"><option value="">全担当者</option><option value="角岡">角岡</option><option value="額賀">額賀</option><option value="玉木">玉木</option><option value="佐々木">佐々木</option><option value="三島">三島</option><option value="増渕">増渕</option><option value="池田">池田</option><option value="蔦澤">蔦澤</option><option value="木下">木下</option></select>
         <select id="fStatus" onchange="renderList()">
           <option value="">全ステータス</option>
           <option value="active">進行中</option>
@@ -326,12 +341,561 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       </div>
     </div>
     <div class="content">
-      <div class="project-list" id="projectList"></div>
+      <div class="project-list" id="projectList"><div class="pl-item" data-pid="1" onclick="openDetail(1)">
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="pl-cat">①</span>
+    <span class="pl-name">補正情報配信事業</span>
+    <span class="pl-owner-col">蔦澤</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="58" onclick="openDetail(58)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">①</span>
+    <span class="pl-name">ビジネス展開検討（ソフトウェア）</span>
+    <span class="pl-owner-col">額賀</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="8" onclick="openDetail(8)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">モバイルアプリ開発</span>
+    <span class="pl-owner-col">池田・木下・角岡・額賀</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="9" onclick="openDetail(9)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">知的財産の取り扱い協議</span>
+    <span class="pl-owner-col">角岡・額賀</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="10" onclick="openDetail(10)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">CoordyNavi販売支援（インド）</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="44" onclick="openDetail(44)">
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">アジアでのカスタマーサポート用のチャットボット導入（Hubspot社）</span>
+    <span class="pl-owner-col">池田</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="45" onclick="openDetail(45)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">サブスクリプション型ビジネス向けの統合プラットフォーム選定と運用体制の構築  KeyLight</span>
+    <span class="pl-owner-col">池田・佐々木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="48" onclick="openDetail(48)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">・Trimbleソフトウェア事業の分析 ・建築新規案件の検討 -&gt; InOrganic戦略-&gt;建築向けアプリ開発</span>
+    <span class="pl-owner-col">蔦澤・額賀</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="49" onclick="openDetail(49)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">CoordyCADの要求仕様</span>
+    <span class="pl-owner-col">木下・角岡・額賀</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="50" onclick="openDetail(50)">
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">CoordyNavi開発</span>
+    <span class="pl-owner-col">池田・木下・角岡・額賀</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="56" onclick="openDetail(56)">
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">CoordyCAD開発</span>
+    <span class="pl-owner-col">佐々木・木下・角岡・額賀・池田</span>
+    <div class="pl-status">
+      <span class="tag" style="background:var(--accent-light);color:var(--accent);font-size:9px">Report</span>
+      
+    </div>
+  </div><div class="pl-item" data-pid="57" onclick="openDetail(57)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">②</span>
+    <span class="pl-name">マイニング向けアプリ開発</span>
+    <span class="pl-owner-col">額賀・蔦澤</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="12" onclick="openDetail(12)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">建コンとのリレーション構築</span>
+    <span class="pl-owner-col">玉木・木下</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="13" onclick="openDetail(13)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">JICA技プロ・電子基準点利活用後継PJ（タイ）案件形成支援  事業規模2億円</span>
+    <span class="pl-owner-col">玉木・蔦澤・増渕</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="17" onclick="openDetail(17)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">JICA技プロ・電子基準点配備PJ（ヨルダン）案件形成支援</span>
+    <span class="pl-owner-col">蔦澤・玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="18" onclick="openDetail(18)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">フィリピンDPWH・電子基準点引き合い支援（TPM支援） 目先入札$500K、3年間 $900K+Rover $1.3M</span>
+    <span class="pl-owner-col">蔦澤・玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="23" onclick="openDetail(23)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">インド・パンジャブの園芸農業案件 三祐調査業務  円借款250億円</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="39" onclick="openDetail(39)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">インドのMCレンタル業の実施</span>
+    <span class="pl-owner-col">木下</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="52" onclick="openDetail(52)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">タイ・キャッサバ向けJAIF・三祐の実証支援事業</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="53" onclick="openDetail(53)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">ベトナム農業省とスマート農業の推進</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="54" onclick="openDetail(54)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">③</span>
+    <span class="pl-name">JICA南アジア部（インド）に向けた、鉄道の維持管理向けの協業による機材販売案件の仕込み</span>
+    <span class="pl-owner-col">角岡・玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="27" onclick="openDetail(27)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">④</span>
+    <span class="pl-name">JICA・技プロにおける測量機材販売案件（ラオス測量局・地形図作成）</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="41" onclick="openDetail(41)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">④</span>
+    <span class="pl-name">JICSとの協業による機材販売案件の仕込み</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="30" onclick="openDetail(30)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">従来工法とICT工法のコスト可視化（アジア版）</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="31" onclick="openDetail(31)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">保有資産の整理</span>
+    <span class="pl-owner-col">玉木・増渕</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="33" onclick="openDetail(33)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">山梨大学の講義（シビルマネジメント基礎）</span>
+    <span class="pl-owner-col">木下</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="34" onclick="openDetail(34)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">JICA研修（有料）対応</span>
+    <span class="pl-owner-col">玉木・増渕</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="55" onclick="openDetail(55)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">経産省通商政策局との連携検討</span>
+    <span class="pl-owner-col">角岡・玉木</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="60" onclick="openDetail(60)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト②</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="61" onclick="openDetail(61)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト①</span>
+    <span class="pl-owner-col">増渕</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="62" onclick="openDetail(62)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">インドでの人材採用（事業開発＋PO）</span>
+    <span class="pl-owner-col">角岡・蔦澤・木下</span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px;"><span style="flex:1;height:1px;background:var(--border)"></span><span style="font-size:9px;color:var(--hint);white-space:nowrap">終了案件</span><span style="flex:1;height:1px;background:var(--border)"></span></div><div class="pl-item closed" data-pid="2" onclick="openDetail(2)">
+    
+    <span class="pl-cat">①</span>
+    <span class="pl-name">Trimbleソフトウェア事業の分析</span>
+    <span class="pl-owner-col">蔦澤・額賀</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="42" onclick="openDetail(42)">
+    
+    <span class="pl-cat">①</span>
+    <span class="pl-name">Trimbleソフトウェア事業の分析  -&gt; InOrganic戦略</span>
+    <span class="pl-owner-col">蔦澤・額賀</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="3" onclick="openDetail(3)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">福井コンピュータ様協業 デザインガイドライン</span>
+    <span class="pl-owner-col">額賀・角岡</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="4" onclick="openDetail(4)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">福井コンピュータ様協業 FA基本設計</span>
+    <span class="pl-owner-col">角岡</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="5" onclick="openDetail(5)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">福井コンピュータ様協業 エンジニア採用</span>
+    <span class="pl-owner-col">角岡・木下</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="6" onclick="openDetail(6)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">福井コンピュータ様協業 サイトオフィスツールの要求仕様</span>
+    <span class="pl-owner-col">木下・角岡・額賀</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="7" onclick="openDetail(7)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">インド開発ベンダー選定</span>
+    <span class="pl-owner-col">木下・角岡</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="36" onclick="openDetail(36)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">基本合意書/ソフトウェア個別契約書（OEM契約書）の締結</span>
+    <span class="pl-owner-col">角岡</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="37" onclick="openDetail(37)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">調査会社を利用したフィールド/オフィスアプリの価格調査の実施</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="43" onclick="openDetail(43)">
+    
+    <span class="pl-cat">②</span>
+    <span class="pl-name">アジャイル開発プロセス</span>
+    <span class="pl-owner-col">角岡・池田・木下</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="11" onclick="openDetail(11)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">インドでのMCガイドライン策定</span>
+    <span class="pl-owner-col">木下</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="14" onclick="openDetail(14)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">サトウキビ・ICT農業実証最終報告書作成</span>
+    <span class="pl-owner-col">増渕</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="15" onclick="openDetail(15)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">OCSB 実証参加</span>
+    <span class="pl-owner-col">蔦澤・増渕</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="16" onclick="openDetail(16)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">カセサート大・ソラビス先生とのKorn Kean Sugarcane Company（KSL）向け自動操舵提案（タイ）</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="19" onclick="openDetail(19)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">フィリピンの独立系タワー企業であるFrontier Towerとの補正情報配信事業の協業</span>
+    <span class="pl-owner-col">蔦澤・木下</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="20" onclick="openDetail(20)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">トンネル施工への製品普及</span>
+    <span class="pl-owner-col">木下・角岡</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="21" onclick="openDetail(21)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">ラオス向け電子基準点調査支援</span>
+    <span class="pl-owner-col">蔦澤・玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="22" onclick="openDetail(22)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">農業案件形成・JAIF</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="24" onclick="openDetail(24)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">農林水産省　ウクライナ農業回復緊急支援事業 三祐経由での補助金公募案件での協力依頼 上限4,000万円、26年2/27まで</span>
+    <span class="pl-owner-col">蔦澤</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="38" onclick="openDetail(38)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">Sri Lanka向けCORSソフト、ハードの入札引き合い  24局＋ソフト（1.2億円）</span>
+    <span class="pl-owner-col">蔦澤</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="40" onclick="openDetail(40)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">日ASEANシンポジウム 11/25-26プレゼン ASEAN農業省職員等50名</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="51" onclick="openDetail(51)">
+    
+    <span class="pl-cat">③</span>
+    <span class="pl-name">インド・ヒマーチャルプラデシュ州(HP州)の作物多様化(JICA案件) Phase 2 (2021 - 2029) 円借款200億円</span>
+    <span class="pl-owner-col">増渕・蔦澤</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="25" onclick="openDetail(25)">
+    
+    <span class="pl-cat">④</span>
+    <span class="pl-name">JICA・測量機材販売案件（パレスティナ・農業支援案件）</span>
+    <span class="pl-owner-col">玉木・増渕</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="26" onclick="openDetail(26)">
+    
+    <span class="pl-cat">④</span>
+    <span class="pl-name">JICA・測量機材販売案件（ウクライナ・緊急復興案件）</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="28" onclick="openDetail(28)">
+    
+    <span class="pl-cat">④</span>
+    <span class="pl-name">JICS開拓</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="29" onclick="openDetail(29)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">ビジネスラボ資料</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="32" onclick="openDetail(32)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">タイ・カセサート大学の教授・生徒一行来日に伴う技術研修への支援（パスコ）</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="35" onclick="openDetail(35)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">マレーシアTC開所式への協力</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="46" onclick="openDetail(46)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">インオーガニック戦略に関わる投資・M&amp;A候補スクリーニング</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div><div class="pl-item closed" data-pid="47" onclick="openDetail(47)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">国総研　中州様対応</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
+  </div></div>
     </div>
   </div>
 
   <!-- DETAIL VIEW -->
-  <div id="view-detail">
+  <div id="view-detail" style="display: none;">
     <div class="topbar">
       <button class="btn ghost" onclick="showList()">← 一覧</button>
       <span class="topbar-title" id="detail-topbar-title"></span>
@@ -362,7 +926,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
   </div>
 
   <!-- REPORT VIEW -->
-  <div id="view-report">
+  <div id="view-report" style="display: none;">
     <div class="topbar">
       <span class="topbar-title">SIB Weekly Report出力</span>
     </div>
@@ -29795,8 +30359,12 @@ function startPolling(){
   }, 30000);
 }
 
-window.addEventListener('pagehide', function(){
-  try{ sessionStorage.removeItem('wr_myowner'); }catch(e){}
+window.addEventListener('pagehide', function(e){
+  // persisted=falseの時だけクリア（再読み込みはpersisted=trueになる場合がある）
+  // タブを閉じた時・ナビゲーション時にセッションをクリア
+  if(!e.persisted){
+    try{ sessionStorage.removeItem('wr_myowner'); }catch(e){}
+  }
 });
 
 function showToast(msg){
@@ -29838,5 +30406,6 @@ function initApp(isFirebaseData){
   }
 }
 </script>
-</body>
-</html>
+
+
+</body></html>
