@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/i048260/Downloads/index_14.html -->
+<!-- saved from url=(0047)file:///C:/Users/i048260/Downloads/index_5.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -226,7 +226,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 <body>
 
 <!-- ===== LOGIN SCREEN ===== -->
-<div id="login-screen" style="display: flex;">
+<div id="login-screen" style="display:none">
   <div class="login-wrap">
     <div class="login-title">
       <h1>プロジェクト進捗管理</h1>
@@ -234,13 +234,13 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="login-card">
       <div class="login-label">メンバーを選択</div>
-      <div id="login-member-list"><div class="member-row" data-name="角岡" onclick="selectMember(&#39;角岡&#39;)"><div class="member-avatar">SK</div><span class="member-name">角岡</span></div><div class="member-row" data-name="玉木" onclick="selectMember(&#39;玉木&#39;)"><div class="member-avatar">NT</div><span class="member-name">玉木</span></div><div class="member-row" data-name="蔦澤" onclick="selectMember(&#39;蔦澤&#39;)"><div class="member-avatar">GT</div><span class="member-name">蔦澤</span></div><div class="member-row" data-name="池田" onclick="selectMember(&#39;池田&#39;)"><div class="member-avatar">TI</div><span class="member-name">池田</span></div><div class="member-row" data-name="佐々木" onclick="selectMember(&#39;佐々木&#39;)"><div class="member-avatar">TS</div><span class="member-name">佐々木</span></div><div class="member-row" data-name="木下" onclick="selectMember(&#39;木下&#39;)"><div class="member-avatar">KK</div><span class="member-name">木下</span></div><div class="member-row selected" data-name="増渕" onclick="selectMember(&#39;増渕&#39;)"><div class="member-avatar">MM</div><span class="member-name">増渕</span></div><div class="member-row" data-name="額賀" onclick="selectMember(&#39;額賀&#39;)"><div class="member-avatar">HN</div><span class="member-name">額賀</span></div></div>
-      <button id="btn-login-enter" class="btn primary" style="width: 100%; margin-top: 10px; opacity: 1; cursor: pointer;" onclick="doLogin(false)">入室する</button>
+      <div id="login-member-list"></div>
+      <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(false)">入室する</button>
     </div>
     <div class="login-card">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:12px;font-weight:500;color:var(--text)">⚙️ 管理者として入室</div>
-        <button id="btn-login-admin" class="btn sm" style="opacity: 1; cursor: pointer;" onclick="doLogin(true)">入室する</button>
+        <button id="btn-login-admin" class="btn sm" style="opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(true)">入室する</button>
       </div>
       <div id="admin-in-use-msg" class="login-admin-status"></div>
     </div>
@@ -269,7 +269,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <div class="sb-label">ビュー</div>
     <div class="sb-item active" id="nav-list" onclick="showList()">
       <span>◫</span> プロジェクト一覧
-      <span class="sb-count" id="cnt-active">29</span>
+      <span class="sb-count" id="cnt-active">31</span>
     </div>
     <div class="sb-item" id="nav-myview" onclick="showMyView()">
       <span>👤</span> マイビュー
@@ -301,7 +301,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div><div class="sb-item" onclick="filterByCat(&#39;⑤その他&#39;,this)">
       <span style="font-size:9px">⑤</span>
       <span style="flex:1;font-size:10px">その他</span>
-      <span class="sb-count">6</span>
+      <span class="sb-count">8</span>
     </div></div>
   </div>
   <div class="sb-footer">
@@ -327,7 +327,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
   <!-- LIST VIEW -->
   <div id="view-list" style="display: block;">
     <div class="topbar">
-      <span class="topbar-title">プロジェクト一覧 <span id="list-count-label" style="font-size:11px;font-weight:400;color:var(--muted)">進行中 29件</span></span>
+      <span class="topbar-title">プロジェクト一覧 <span id="list-count-label" style="font-size:11px;font-weight:400;color:var(--muted)">進行中 31件</span></span>
       <div class="filter-row" style="margin:0">
         <select id="fWeek" onchange="currentWeek=this.value;renderList()" style="font-weight:500;color:var(--accent)"><option value="25th_May" selected="">2026年5月25日</option><option value="18th_May">2026年5月18日</option><option value="11th_May">2026年5月11日</option><option value="4th_May">2026年5月4日</option><option value="27th_April">2026年4月27日</option><option value="20th_April">2026年4月20日</option><option value="13th_April">2026年4月13日</option><option value="6th_April">2026年4月6日</option><option value="30th_March">2026年3月30日</option><option value="23rd_March">2026年3月23日</option><option value="16th_March">2026年3月16日</option><option value="9th_March">2026年3月9日</option><option value="2nd_March">2026年3月2日</option><option value="24th_February">2026年2月24日</option><option value="16th_February">2026年2月16日</option><option value="9th_February">2026年2月9日</option><option value="2nd_February">2026年2月2日</option><option value="26th_January">2026年1月26日</option><option value="19th_January">2026年1月19日</option><option value="13rd_January">2026年1月13日</option><option value="5th_January">2026年1月5日</option><option value="24th_December">2025年12月24日</option><option value="22nd_December">2025年12月22日</option><option value="17th_December">2025年12月17日</option><option value="10th_December">2025年12月10日</option><option value="2nd_December">2025年12月2日</option><option value="26th_November">2025年11月26日</option><option value="19th_November">2025年11月19日</option><option value="12th_November">2025年11月12日</option><option value="5th_November">2025年11月5日</option><option value="29th_October">2025年10月29日</option><option value="22nd_October">2025年10月22日</option><option value="15th_October">2025年10月15日</option><option value="8th_October">2025年10月8日</option><option value="1st_October">2025年10月1日</option><option value="25th_September">2025年9月25日</option><option value="17th_September">2025年9月17日</option><option value="10th_September">2025年9月10日</option><option value="5th_September">2025年9月5日</option><option value="27th_August">2025年8月27日</option><option value="20th_August">2025年8月20日</option><option value="6th_August">2025年8月6日</option><option value="30th_July">2025年7月30日</option><option value="22nd_July">2025年7月22日</option><option value="15th_July">2025年7月15日</option><option value="8th_July">2025年7月8日</option><option value="1st_July">2025年7月1日</option><option value="25th_Jun">2025年6月25日</option><option value="17th_Jun">2025年6月17日</option><option value="10th_Jun">2025年6月10日</option><option value="3rd_Jun">2025年6月3日</option><option value="27th_May">2025年5月27日</option><option value="21st_May">2025年5月21日</option><option value="15th_May">2025年5月15日</option><option value="9th_May">2025年5月9日</option></select>
         <select id="fCat" onchange="renderList()"><option value="">全カテゴリ</option><option value="①新規事業創出">①新規事業創出</option><option value="②アジア向けソフトウェア">②アジア向けソフトウェア</option><option value="③市場開拓">③市場開拓</option><option value="④機材販売">④機材販売</option><option value="⑤その他">⑤その他</option></select>
@@ -593,6 +593,24 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
       
     </div>
+  </div><div class="pl-item" data-pid="60" onclick="openDetail(60)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト②</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="61" onclick="openDetail(61)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト①</span>
+    <span class="pl-owner-col">増渕</span>
+    <div class="pl-status">
+      
+      
+    </div>
   </div><div class="pl-item" data-pid="62" onclick="openDetail(62)">
     <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
     <span class="pl-cat">⑤</span>
@@ -836,6 +854,15 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
       <span class="tag" style="font-size:9px">終了</span>
     </div>
+  </div><div class="pl-item closed" data-pid="32" onclick="openDetail(32)">
+    
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">タイ・カセサート大学の教授・生徒一行来日に伴う技術研修への支援（パスコ）</span>
+    <span class="pl-owner-col">玉木</span>
+    <div class="pl-status">
+      
+      <span class="tag" style="font-size:9px">終了</span>
+    </div>
   </div><div class="pl-item closed" data-pid="35" onclick="openDetail(35)">
     
     <span class="pl-cat">⑤</span>
@@ -858,15 +885,6 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     
     <span class="pl-cat">⑤</span>
     <span class="pl-name">国総研　中州様対応</span>
-    <span class="pl-owner-col"></span>
-    <div class="pl-status">
-      
-      <span class="tag" style="font-size:9px">終了</span>
-    </div>
-  </div><div class="pl-item closed" data-pid="63" onclick="openDetail(63)">
-    
-    <span class="pl-cat">⑤</span>
-    <span class="pl-name">テスト</span>
     <span class="pl-owner-col"></span>
     <div class="pl-status">
       
@@ -28567,8 +28585,8 @@ const LOGS_DEFAULT = {
 // ────────────────────────────────────────────────────────
 // FIREBASE REST API（SDK不要・読み込み順序問題なし）
 // ────────────────────────────────────────────────────────
-const FB_URL  = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/weekly_report_v3';
-const FB_LOG  = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/access_logs';
+const FB_URL  = 'https://weekly-report-sub-default-rtdb.asia-southeast1.firebasedatabase.app/weekly_report_v3';
+const FB_LOG  = 'https://weekly-report-sub-default-rtdb.asia-southeast1.firebasedatabase.app/access_logs';
 
 const fbDB = {
   get(callback){
@@ -29070,7 +29088,7 @@ function filterByCat(cat, el){
 // ────────────────────────────────────────────────────────
 let myOwner = '';
 let isAdmin = false;
-const FB_ADMIN = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/admin_session';
+const FB_ADMIN = 'https://weekly-report-sub-default-rtdb.asia-southeast1.firebasedatabase.app/admin_session';
 
 // イニシャルマスター（メンバー管理と連動）
 const MEMBER_INITIALS = {
@@ -29121,6 +29139,112 @@ function initLoginScreen(){
   try{ sessionStorage.removeItem('wr_myowner'); }catch(e){}
   releaseAdminSession();
   renderMemberList(list, null);
+}
+
+// ────────────────────────────────────────────────────────
+// 画像アップロード機能
+// ────────────────────────────────────────────────────────
+const IMG_MAX = 5;
+const IMG_MAX_BYTES = 1024 * 1024; // 1MB
+
+function handleImgDrop(event, pid){
+  event.preventDefault();
+  document.getElementById('img-drop-zone').style.background = '';
+  handleImgFiles(event.dataTransfer.files, pid);
+}
+
+function handleImgFiles(files, pid){
+  const log = getLog(pid, currentWeek) || {};
+  const existing = log.images || [];
+  Array.from(files).forEach(f=>{
+    if(existing.length >= IMG_MAX){ showToast('画像は最大'+IMG_MAX+'枚までです'); return; }
+    if(!f.type.match(/^image\//)) return;
+    compressImage(f, IMG_MAX_BYTES, dataUrl=>{
+      const expireTs = Date.now() + 90*24*60*60*1000; // 3ヶ月後
+      existing.push({dataUrl, name:f.name, expireTs});
+      renderImgThumbs(existing, pid);
+      enableSaveBtn();
+    });
+  });
+}
+
+function compressImage(file, maxBytes, callback){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let quality = 0.85;
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // 長辺1600px以上は縮小
+      if(w > 1600 || h > 1600){
+        const r = Math.min(1600/w, 1600/h);
+        w = Math.round(w*r); h = Math.round(h*r);
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      // 1MB超えたらqualityを下げて再圧縮
+      while(dataUrl.length * 0.75 > maxBytes && quality > 0.3){
+        quality -= 0.1;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+      callback(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderImgThumbs(images, pid){
+  const container = document.getElementById('img-thumbs');
+  const counter = document.getElementById('img-counter');
+  if(!container) return;
+  const expireStr = ts=>{
+    const d = new Date(ts);
+    return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+'まで';
+  };
+  container.innerHTML = images.map((img,i)=>`
+    <div style="position:relative;width:80px;height:80px;border-radius:var(--rad);overflow:hidden;border:0.5px solid var(--border2);cursor:pointer" onclick="openImgModal('${img.dataUrl}')">
+      <img src="${img.dataUrl}" style="width:100%;height:100%;object-fit:cover" alt="${img.name}">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);font-size:8px;color:#fff;padding:2px 3px;text-align:center">${expireStr(img.expireTs)}</div>
+      <button style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.5);border:none;border-radius:50%;width:17px;height:17px;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0"
+        onclick="event.stopPropagation();removeImg(${i},${pid})">×</button>
+    </div>`).join('');
+  if(counter) counter.textContent = images.length > 0 ? images.length+' / '+IMG_MAX+' 枚' : '';
+}
+
+function removeImg(idx, pid){
+  const log = getLog(pid, currentWeek) || {};
+  const images = log.images || [];
+  images.splice(idx, 1);
+  if(log.images) log.images = images;
+  renderImgThumbs(images, pid);
+  enableSaveBtn();
+}
+
+function openImgModal(dataUrl){
+  let modal = document.getElementById('_img_modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = '_img_modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+    modal.onclick = ()=>modal.remove();
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<img src="${dataUrl}" style="max-width:90vw;max-height:85vh;border-radius:var(--rad);object-fit:contain">`;
+}
+
+function cleanExpiredImages(){
+  const now = Date.now();
+  let changed = false;
+  Object.values(LOGS).forEach(log=>{
+    if(!log.images) return;
+    const before = log.images.length;
+    log.images = log.images.filter(img=>img.expireTs > now);
+    if(log.images.length !== before) changed = true;
+  });
+  if(changed) saveState();
 }
 
 function selectMember(name){
@@ -29529,6 +29653,12 @@ function renderDetail(){
 
   renderDetailLeft(p);
   renderDetailRight(p);
+
+  // 既存の画像サムネイルを表示
+  const log = getLog(p.id, currentWeek)||{};
+  if(log.images && log.images.length > 0){
+    renderImgThumbs(log.images, p.id);
+  }
 }
 
 function renderDetailLeft(p){
@@ -29627,6 +29757,25 @@ function renderDetailLeft(p){
       <div class="input-row">
         <label>次のアクション</label>
         <textarea id="inp-next" placeholder="来週やること・フォローアップ項目…" style="min-height:52px" oninput="enableSaveBtn()">${esc(log.nextAction)}</textarea>
+      </div>
+      </div>
+
+      <!-- 画像アップロード -->
+      <div class="input-row">
+        <label style="display:flex;align-items:center;gap:6px">添付画像
+          <span style="font-size:10px;color:var(--warn);background:var(--warn-bg);padding:2px 7px;border-radius:10px">保存から3ヶ月で自動削除</span>
+        </label>
+        <div id="img-drop-zone" style="border:1.5px dashed var(--border2);border-radius:var(--rad);padding:14px;text-align:center;cursor:pointer;font-size:12px;color:var(--hint)"
+          ondragover="event.preventDefault();this.style.background=\'var(--surface)\'"
+          ondragleave="this.style.background=\'\'"
+          ondrop="handleImgDrop(event,${p.id})"
+          onclick="document.getElementById(\'img-file-input\').click()">
+          📎 画像をドラッグ＆ドロップ、またはクリックして選択<br>
+          <span style="font-size:10px;color:var(--hint)">最大5枚・1枚1MBまで / JPEG・PNG・HEIC・WebP</span>
+        </div>
+        <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="handleImgFiles(this.files,${p.id})">
+        <div id="img-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+        <div id="img-counter" style="font-size:10px;color:var(--hint);text-align:right;margin-top:4px"></div>
       </div>
       <div class="input-actions">
         <button class="btn sm primary" id="save-btn" onclick="saveLog(${p.id})" disabled style="opacity:0.4;cursor:not-allowed">保存</button>
@@ -29808,9 +29957,10 @@ function saveLog(pid){
   const nextAction = document.getElementById('inp-next').value.trim();
   const existing = getLog(pid, currentWeek);
   const hlType = existing?.hlType||'';
+  const images = existing?.images||[];
   const charsBefore = (existing?.progress||'').length;
-  LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType};
-  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType});
+  LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType, images};
+  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType, images});
   fbDB.writeLog('edit_save', `pid:${pid} week:${currentWeek} chars_before:${charsBefore} chars_after:${progress.length}`);
   saveState();
   // 保存ボタンをグレーに戻す＋完了表示
@@ -30313,6 +30463,7 @@ document.addEventListener('DOMContentLoaded', function(){
       initApp(isFirebaseData);
       fbDB.writeLog('boot', `firebase:${isFirebaseData} projects:${PROJECTS.length}`);
       startPolling();
+      cleanExpiredImages();
     } catch(e) {
       console.error('Boot error:', e);
       try { showToast('読み込みエラー: ' + e.message); } catch(_){}
