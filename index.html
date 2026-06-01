@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/i048260/Downloads/index_24.html -->
+<!-- saved from url=(0047)file:///C:/Users/i048260/Downloads/index_5.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -226,7 +226,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 <body>
 
 <!-- ===== LOGIN SCREEN ===== -->
-<div id="login-screen" style="display: flex;">
+<div id="login-screen" style="display:none">
   <div class="login-wrap">
     <div class="login-title">
       <h1>プロジェクト進捗管理</h1>
@@ -234,7 +234,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="login-card">
       <div class="login-label">メンバーを選択</div>
-      <div id="login-member-list"><div class="member-row" data-name="角岡" onclick="selectMember(&#39;角岡&#39;)"><div class="member-avatar">SK</div><span class="member-name">角岡</span></div><div class="member-row" data-name="玉木" onclick="selectMember(&#39;玉木&#39;)"><div class="member-avatar">NT</div><span class="member-name">玉木</span></div><div class="member-row" data-name="蔦澤" onclick="selectMember(&#39;蔦澤&#39;)"><div class="member-avatar">GT</div><span class="member-name">蔦澤</span></div><div class="member-row" data-name="池田" onclick="selectMember(&#39;池田&#39;)"><div class="member-avatar">TI</div><span class="member-name">池田</span></div><div class="member-row" data-name="佐々木" onclick="selectMember(&#39;佐々木&#39;)"><div class="member-avatar">TS</div><span class="member-name">佐々木</span></div><div class="member-row" data-name="木下" onclick="selectMember(&#39;木下&#39;)"><div class="member-avatar">KK</div><span class="member-name">木下</span></div><div class="member-row" data-name="増渕" onclick="selectMember(&#39;増渕&#39;)"><div class="member-avatar">MM</div><span class="member-name">増渕</span></div><div class="member-row" data-name="額賀" onclick="selectMember(&#39;額賀&#39;)"><div class="member-avatar">HN</div><span class="member-name">額賀</span></div></div>
+      <div id="login-member-list"></div>
       <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(false)">入室する</button>
     </div>
     <div class="login-card">
@@ -269,7 +269,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <div class="sb-label">ビュー</div>
     <div class="sb-item active" id="nav-list" onclick="showList()">
       <span>◫</span> プロジェクト一覧
-      <span class="sb-count" id="cnt-active">30</span>
+      <span class="sb-count" id="cnt-active">31</span>
     </div>
     <div class="sb-item" id="nav-myview" onclick="showMyView()">
       <span>👤</span> マイビュー
@@ -301,7 +301,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div><div class="sb-item" onclick="filterByCat(&#39;⑤その他&#39;,this)">
       <span style="font-size:9px">⑤</span>
       <span style="flex:1;font-size:10px">その他</span>
-      <span class="sb-count">7</span>
+      <span class="sb-count">8</span>
     </div></div>
   </div>
   <div class="sb-footer">
@@ -327,9 +327,9 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
   <!-- LIST VIEW -->
   <div id="view-list" style="display: block;">
     <div class="topbar">
-      <span class="topbar-title">プロジェクト一覧 <span id="list-count-label" style="font-size:11px;font-weight:400;color:var(--muted)">進行中 30件</span></span>
+      <span class="topbar-title">プロジェクト一覧 <span id="list-count-label" style="font-size:11px;font-weight:400;color:var(--muted)">進行中 31件</span></span>
       <div class="filter-row" style="margin:0">
-        <select id="fWeek" onchange="currentWeek=this.value;renderList()" style="font-weight:500;color:var(--accent)"><option value="1st_June" selected="">2026年6月1日</option><option value="25th_May">2026年5月25日</option><option value="18th_May">2026年5月18日</option><option value="11th_May">2026年5月11日</option><option value="4th_May">2026年5月4日</option><option value="27th_April">2026年4月27日</option><option value="20th_April">2026年4月20日</option><option value="13th_April">2026年4月13日</option><option value="6th_April">2026年4月6日</option><option value="30th_March">2026年3月30日</option><option value="23rd_March">2026年3月23日</option><option value="16th_March">2026年3月16日</option><option value="9th_March">2026年3月9日</option><option value="2nd_March">2026年3月2日</option><option value="24th_February">2026年2月24日</option><option value="16th_February">2026年2月16日</option><option value="9th_February">2026年2月9日</option><option value="2nd_February">2026年2月2日</option><option value="26th_January">2026年1月26日</option><option value="19th_January">2026年1月19日</option><option value="13rd_January">2026年1月13日</option><option value="5th_January">2026年1月5日</option><option value="24th_December">2025年12月24日</option><option value="22nd_December">2025年12月22日</option><option value="17th_December">2025年12月17日</option><option value="10th_December">2025年12月10日</option><option value="2nd_December">2025年12月2日</option><option value="26th_November">2025年11月26日</option><option value="19th_November">2025年11月19日</option><option value="12th_November">2025年11月12日</option><option value="5th_November">2025年11月5日</option><option value="29th_October">2025年10月29日</option><option value="22nd_October">2025年10月22日</option><option value="15th_October">2025年10月15日</option><option value="8th_October">2025年10月8日</option><option value="1st_October">2025年10月1日</option><option value="25th_September">2025年9月25日</option><option value="17th_September">2025年9月17日</option><option value="10th_September">2025年9月10日</option><option value="5th_September">2025年9月5日</option><option value="27th_August">2025年8月27日</option><option value="20th_August">2025年8月20日</option><option value="6th_August">2025年8月6日</option><option value="30th_July">2025年7月30日</option><option value="22nd_July">2025年7月22日</option><option value="15th_July">2025年7月15日</option><option value="8th_July">2025年7月8日</option><option value="1st_July">2025年7月1日</option><option value="25th_Jun">2025年6月25日</option><option value="17th_Jun">2025年6月17日</option><option value="10th_Jun">2025年6月10日</option><option value="3rd_Jun">2025年6月3日</option><option value="27th_May">2025年5月27日</option><option value="21st_May">2025年5月21日</option><option value="15th_May">2025年5月15日</option><option value="9th_May">2025年5月9日</option></select>
+        <select id="fWeek" onchange="currentWeek=this.value;renderList()" style="font-weight:500;color:var(--accent)"><option value="25th_May" selected="">2026年5月25日</option><option value="18th_May">2026年5月18日</option><option value="11th_May">2026年5月11日</option><option value="4th_May">2026年5月4日</option><option value="27th_April">2026年4月27日</option><option value="20th_April">2026年4月20日</option><option value="13th_April">2026年4月13日</option><option value="6th_April">2026年4月6日</option><option value="30th_March">2026年3月30日</option><option value="23rd_March">2026年3月23日</option><option value="16th_March">2026年3月16日</option><option value="9th_March">2026年3月9日</option><option value="2nd_March">2026年3月2日</option><option value="24th_February">2026年2月24日</option><option value="16th_February">2026年2月16日</option><option value="9th_February">2026年2月9日</option><option value="2nd_February">2026年2月2日</option><option value="26th_January">2026年1月26日</option><option value="19th_January">2026年1月19日</option><option value="13rd_January">2026年1月13日</option><option value="5th_January">2026年1月5日</option><option value="24th_December">2025年12月24日</option><option value="22nd_December">2025年12月22日</option><option value="17th_December">2025年12月17日</option><option value="10th_December">2025年12月10日</option><option value="2nd_December">2025年12月2日</option><option value="26th_November">2025年11月26日</option><option value="19th_November">2025年11月19日</option><option value="12th_November">2025年11月12日</option><option value="5th_November">2025年11月5日</option><option value="29th_October">2025年10月29日</option><option value="22nd_October">2025年10月22日</option><option value="15th_October">2025年10月15日</option><option value="8th_October">2025年10月8日</option><option value="1st_October">2025年10月1日</option><option value="25th_September">2025年9月25日</option><option value="17th_September">2025年9月17日</option><option value="10th_September">2025年9月10日</option><option value="5th_September">2025年9月5日</option><option value="27th_August">2025年8月27日</option><option value="20th_August">2025年8月20日</option><option value="6th_August">2025年8月6日</option><option value="30th_July">2025年7月30日</option><option value="22nd_July">2025年7月22日</option><option value="15th_July">2025年7月15日</option><option value="8th_July">2025年7月8日</option><option value="1st_July">2025年7月1日</option><option value="25th_Jun">2025年6月25日</option><option value="17th_Jun">2025年6月17日</option><option value="10th_Jun">2025年6月10日</option><option value="3rd_Jun">2025年6月3日</option><option value="27th_May">2025年5月27日</option><option value="21st_May">2025年5月21日</option><option value="15th_May">2025年5月15日</option><option value="9th_May">2025年5月9日</option></select>
         <select id="fCat" onchange="renderList()"><option value="">全カテゴリ</option><option value="①新規事業創出">①新規事業創出</option><option value="②アジア向けソフトウェア">②アジア向けソフトウェア</option><option value="③市場開拓">③市場開拓</option><option value="④機材販売">④機材販売</option><option value="⑤その他">⑤その他</option></select>
         <select id="fOwner" onchange="renderList()"><option value="">全担当者</option><option value="角岡">角岡</option><option value="額賀">額賀</option><option value="玉木">玉木</option><option value="佐々木">佐々木</option><option value="三島">三島</option><option value="増渕">増渕</option><option value="池田">池田</option><option value="蔦澤">蔦澤</option><option value="木下">木下</option></select>
         <select id="fStatus" onchange="renderList()">
@@ -342,7 +342,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="content">
       <div class="project-list" id="projectList"><div class="pl-item" data-pid="1" onclick="openDetail(1)">
-    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
     <span class="pl-cat">①</span>
     <span class="pl-name">補正情報配信事業</span>
     <span class="pl-owner-col">蔦澤</span>
@@ -387,7 +387,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
     </div>
   </div><div class="pl-item" data-pid="44" onclick="openDetail(44)">
-    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
     <span class="pl-cat">②</span>
     <span class="pl-name">アジアでのカスタマーサポート用のチャットボット導入（Hubspot社）</span>
     <span class="pl-owner-col">池田</span>
@@ -423,7 +423,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
     </div>
   </div><div class="pl-item" data-pid="50" onclick="openDetail(50)">
-    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
     <span class="pl-cat">②</span>
     <span class="pl-name">CoordyNavi開発</span>
     <span class="pl-owner-col">池田・木下・角岡・額賀</span>
@@ -432,12 +432,12 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
     </div>
   </div><div class="pl-item" data-pid="56" onclick="openDetail(56)">
-    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
     <span class="pl-cat">②</span>
     <span class="pl-name">CoordyCAD開発</span>
     <span class="pl-owner-col">佐々木・木下・角岡・額賀・池田</span>
     <div class="pl-status">
-      
+      <span class="tag" style="background:var(--accent-light);color:var(--accent);font-size:9px">Report</span>
       
     </div>
   </div><div class="pl-item" data-pid="57" onclick="openDetail(57)">
@@ -593,6 +593,24 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
       
     </div>
+  </div><div class="pl-item" data-pid="60" onclick="openDetail(60)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト②</span>
+    <span class="pl-owner-col"></span>
+    <div class="pl-status">
+      
+      
+    </div>
+  </div><div class="pl-item" data-pid="61" onclick="openDetail(61)">
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
+    <span class="pl-cat">⑤</span>
+    <span class="pl-name">テストプロジェクト①</span>
+    <span class="pl-owner-col">増渕</span>
+    <div class="pl-status">
+      
+      
+    </div>
   </div><div class="pl-item" data-pid="62" onclick="openDetail(62)">
     <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
     <span class="pl-cat">⑤</span>
@@ -600,15 +618,6 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <span class="pl-owner-col">角岡・蔦澤・木下</span>
     <div class="pl-status">
       
-      
-    </div>
-  </div><div class="pl-item" data-pid="63" onclick="openDetail(63)">
-    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
-    <span class="pl-cat">⑤</span>
-    <span class="pl-name">テスト用</span>
-    <span class="pl-owner-col">増渕</span>
-    <div class="pl-status">
-      <span class="tag" style="background:var(--accent-light);color:var(--accent);font-size:9px">Report</span>
       
     </div>
   </div><div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px;"><span style="flex:1;height:1px;background:var(--border)"></span><span style="font-size:9px;color:var(--hint);white-space:nowrap">終了案件</span><span style="flex:1;height:1px;background:var(--border)"></span></div><div class="pl-item closed" data-pid="2" onclick="openDetail(2)">
@@ -877,15 +886,6 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     <span class="pl-cat">⑤</span>
     <span class="pl-name">国総研　中州様対応</span>
     <span class="pl-owner-col"></span>
-    <div class="pl-status">
-      
-      <span class="tag" style="font-size:9px">終了</span>
-    </div>
-  </div><div class="pl-item closed" data-pid="61" onclick="openDetail(61)">
-    
-    <span class="pl-cat">⑤</span>
-    <span class="pl-name">テストプロジェクト①</span>
-    <span class="pl-owner-col">増渕</span>
     <div class="pl-status">
       
       <span class="tag" style="font-size:9px">終了</span>
@@ -30432,19 +30432,20 @@ async function generateWord(){
     a.click();
     URL.revokeObjectURL(url);
 
-    document.getElementById('word-result').innerHTML =
-      // Word出力後に画像選択をUIも含めてリセット
-      Object.entries(_rpSelectedImages).forEach(([pickIdx, idxList])=>{
-        idxList.forEach(imgIdx=>{
-          const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
-          const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
-          if(chk) chk.style.display = 'none';
-          if(box) box.style.border = '1.5px solid var(--border2)';
-        });
-        const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
-        if(cnt) cnt.textContent = '0';
+    // Word出力後に画像選択をUIも含めてリセット
+    Object.entries(_rpSelectedImages).forEach(([pickIdx, idxList])=>{
+      idxList.forEach(imgIdx=>{
+        const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
+        const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
+        if(chk) chk.style.display = 'none';
+        if(box) box.style.border = '1.5px solid var(--border2)';
       });
-      _rpSelectedImages = {};
+      const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
+      if(cnt) cnt.textContent = '0';
+    });
+    _rpSelectedImages = {};
+
+    document.getElementById('word-result').innerHTML =
       '<div style="color:var(--pos);font-size:12px;margin-top:8px;padding:8px 12px;background:var(--pos-bg);border-radius:var(--rad)">✓ docxファイルをダウンロードしました</div>';
 
   } catch(e) {
