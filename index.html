@@ -28738,6 +28738,10 @@ function openDeptSettings(){
       </div>
       <div style="font-size:10px;color:var(--hint);margin-top:6px">※ イニシャルはログイン画面のアイコンに表示されます</div>
     </div>
+    <div style="border-bottom:1px solid var(--border);margin-bottom:14px;padding-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">📊 データ使用量</div>
+      <div id="storage-info-wrap" style="font-size:11px;color:var(--muted)">計算中…</div>
+    </div>
     <div>
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">カテゴリ管理</div>
       <div id="cat-list-edit" style="margin-bottom:8px"></div>
@@ -28752,7 +28756,49 @@ function openDeptSettings(){
     </div>`;
   renderMemberEditList();
   renderCatEditList();
+  renderStorageInfo();
   document.getElementById('overlay').style.display='flex';
+}
+
+function renderStorageInfo(){
+  const el = document.getElementById('storage-info-wrap');
+  if(!el) return;
+  // データサイズを計算
+  const dataStr = JSON.stringify({projects:PROJECTS, logs:LOGS, highlights:HIGHLIGHTS, reportPicks:REPORT_PICKS});
+  const dataSizeKB = Math.round(new Blob([dataStr]).size / 1024);
+  // 画像サイズを計算
+  let imgSizeKB = 0;
+  let imgCount = 0;
+  Object.values(LOGS).forEach(log=>{
+    if(log.images) {
+      log.images.forEach(img=>{
+        imgSizeKB += Math.round(img.dataUrl.length * 0.75 / 1024);
+        imgCount++;
+      });
+    }
+  });
+  const totalKB = dataSizeKB + imgSizeKB;
+  const totalMB = (totalKB / 1024).toFixed(2);
+  const limitMB = 1024;
+  const pct = Math.min(100, (totalKB / (limitMB * 1024) * 100)).toFixed(1);
+  const barColor = pct > 80 ? 'var(--neg)' : pct > 50 ? '#e08c00' : 'var(--pos)';
+
+  el.innerHTML = `
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span>使用量: <strong>${totalMB}MB</strong> / 1GB</span>
+        <span style="color:${barColor}">${pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;color:var(--hint)">
+      <span>📝 テキストデータ: ${dataSizeKB}KB</span>
+      <span>🖼 画像データ: ${imgSizeKB}KB（${imgCount}枚）</span>
+      <span>📁 プロジェクト: ${PROJECTS.length}件</span>
+      <span>📊 進捗ログ: ${Object.keys(LOGS).length}件</span>
+    </div>`;
 }
 
 function renderMemberEditList(){
@@ -30161,6 +30207,34 @@ function rpCard(pk, idx){
   </div>`;
 }
 
+function toggleRpImg(pickIdx, imgIdx){
+  const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
+  const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
+  if(!chk || !box) return;
+  const selected = chk.style.display === 'flex';
+  chk.style.display = selected ? 'none' : 'flex';
+  box.style.border = selected ? '1.5px solid var(--border2)' : '1.5px solid #378ADD';
+  // カウント更新
+  const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
+  if(cnt){
+    const total = document.querySelectorAll(`[id^="rp-img-chk-${pickIdx}-"]`).length;
+    let sel = 0;
+    for(let i=0;i<total;i++){
+      const c = document.getElementById(`rp-img-chk-${pickIdx}-${i}`);
+      if(c && c.style.display === 'flex') sel++;
+    }
+    cnt.textContent = sel;
+  }
+}
+
+function getSelectedRpImages(pickIdx, log){
+  if(!log.images || !log.images.length) return [];
+  return log.images.filter((img, ii)=>{
+    const chk = document.getElementById(`rp-img-chk-${pickIdx}-${ii}`);
+    return chk && chk.style.display === 'flex';
+  });
+}
+
 function confirmAllPicks(){
   (REPORT_PICKS[currentWeek]||[]).forEach(pk=>{ pk.confirmed = true; });
   saveState();
@@ -30226,7 +30300,7 @@ async function generateWord(){
   btn.disabled=true; btn.textContent='⏳ 生成中…';
 
   try {
-    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, HeadingLevel } = window.docx || docx;
+    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, HeadingLevel, ImageRun } = window.docx || docx;
     const week = weekLabel(currentWeek);
     const picks_data = REPORT_PICKS[currentWeek]||[];
 
@@ -30295,6 +30369,26 @@ async function generateWord(){
         border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'e8e6df', space: 1 } },
         children: [new TextRun({ text: '' })]
       }));
+
+      // 選択された画像を埋め込む
+      const pickIdx = picks_data.indexOf(pk);
+      const selectedImgs = getSelectedRpImages(pickIdx, log);
+      for(const img of selectedImgs){
+        try{
+          // Base64からArrayBufferに変換
+          const base64 = img.dataUrl.split(',')[1];
+          const binary = atob(base64);
+          const bytes = new Uint8Array(binary.length);
+          for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
+          children.push(new Paragraph({
+            spacing: { after: 60 },
+            children: [new ImageRun({
+              data: bytes.buffer,
+              transformation: { width: 400, height: 300 }
+            })]
+          }));
+        }catch(e){ console.warn('画像埋め込みエラー:', e); }
+      }
     }
 
     const doc = new Document({
