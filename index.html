@@ -30130,7 +30130,7 @@ function renderReport(){
   el.innerHTML = `
     <div class="rp-week-sel">
       <label>対象週:</label>
-      <select onchange="currentWeek=this.value;renderReport()">
+      <select onchange="currentWeek=this.value;_rpSelectedImages={};renderReport()">
         ${WEEKS.map(w=>`<option value="${w}"${w===currentWeek?' selected':''}>${weekLabel(w)}</option>`).join('')}
       </select>
       ${picks.length>0 && hasEditing
@@ -30207,32 +30207,32 @@ function rpCard(pk, idx){
   </div>`;
 }
 
+// Report画面での選択画像をメモリ管理
+let _rpSelectedImages = {}; // {pickIdx: [imgIdx, ...]}
+
 function toggleRpImg(pickIdx, imgIdx){
+  if(!_rpSelectedImages[pickIdx]) _rpSelectedImages[pickIdx] = [];
+  const sel = _rpSelectedImages[pickIdx];
+  const pos = sel.indexOf(imgIdx);
+  if(pos >= 0){
+    sel.splice(pos, 1);
+  } else {
+    sel.push(imgIdx);
+  }
+  // UI更新
   const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
   const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
-  if(!chk || !box) return;
-  const selected = chk.style.display === 'flex';
-  chk.style.display = selected ? 'none' : 'flex';
-  box.style.border = selected ? '1.5px solid var(--border2)' : '1.5px solid #378ADD';
+  if(chk) chk.style.display = sel.includes(imgIdx) ? 'flex' : 'none';
+  if(box) box.style.border = sel.includes(imgIdx) ? '1.5px solid #378ADD' : '1.5px solid var(--border2)';
   // カウント更新
   const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
-  if(cnt){
-    const total = document.querySelectorAll(`[id^="rp-img-chk-${pickIdx}-"]`).length;
-    let sel = 0;
-    for(let i=0;i<total;i++){
-      const c = document.getElementById(`rp-img-chk-${pickIdx}-${i}`);
-      if(c && c.style.display === 'flex') sel++;
-    }
-    cnt.textContent = sel;
-  }
+  if(cnt) cnt.textContent = sel.length;
 }
 
 function getSelectedRpImages(pickIdx, log){
   if(!log.images || !log.images.length) return [];
-  return log.images.filter((img, ii)=>{
-    const chk = document.getElementById(`rp-img-chk-${pickIdx}-${ii}`);
-    return chk && chk.style.display === 'flex';
-  });
+  const sel = _rpSelectedImages[pickIdx] || [];
+  return sel.map(ii=>log.images[ii]).filter(Boolean);
 }
 
 function confirmAllPicks(){
@@ -30413,6 +30413,7 @@ async function generateWord(){
     URL.revokeObjectURL(url);
 
     document.getElementById('word-result').innerHTML =
+      _rpSelectedImages = {}; // Word出力後に選択リセット
       '<div style="color:var(--pos);font-size:12px;margin-top:8px;padding:8px 12px;background:var(--pos-bg);border-radius:var(--rad)">✓ docxファイルをダウンロードしました</div>';
 
   } catch(e) {
