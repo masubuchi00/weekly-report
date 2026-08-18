@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0047)file:///C:/Users/i048260/Downloads/index_5.html -->
+<!-- saved from url=(0048)file:///C:/Users/i048260/Downloads/index_15.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>週次進捗管理</title>
+<title>【検証用】週次進捗管理</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -20,9 +20,19 @@
 }
 body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.65}
 /* Layout */
-.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.layout{display:grid;grid-template-columns:var(--sb-w,240px) 1fr;min-height:100vh}
+.layout.sb-collapsed{grid-template-columns:0 1fr}
+.layout.sb-collapsed .sidebar{overflow:hidden;border-right:none;visibility:hidden}
 /* Sidebar */
 .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+/* サイドバー幅ドラッグハンドル */
+#sbResizer{position:fixed;top:0;left:calc(var(--sb-w,240px) - 3px);width:6px;height:100vh;cursor:col-resize;z-index:60;background:transparent;transition:background .12s}
+#sbResizer:hover,#sbResizer.dragging{background:var(--accent-mid)}
+body.sb-is-collapsed #sbResizer{display:none}
+#sbRestoreBtn{position:fixed;top:8px;left:8px;z-index:61;display:none;font-size:11px;padding:4px 9px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);border-radius:var(--rad);cursor:pointer;font-family:inherit;box-shadow:var(--shadow)}
+body.sb-is-collapsed #sbRestoreBtn{display:block}
+/* 画面が狭いときはサイドバー既定幅を圧縮 */
+@media (max-width:1400px){:root{--sb-w:200px}}
 .sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--border)}
 .sb-logo h1{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.03em}
 .sb-logo p{font-size:10px;color:var(--muted);margin-top:1px}
@@ -76,7 +86,16 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 .dot-closed{background:var(--hint)}
 /* Project detail */
 #view-detail{display:none}
-.detail-wrap{display:grid;grid-template-columns:1fr 420px;gap:0;min-height:calc(100vh - 41px)}
+.detail-wrap{display:grid;grid-template-columns:1fr 6px var(--dr-w,420px);gap:0;min-height:calc(100vh - 41px)}
+.detail-wrap.dr-collapsed{grid-template-columns:1fr 6px 0}
+.detail-wrap.dr-collapsed .detail-right{overflow:hidden;padding:0;border-left:none;visibility:hidden}
+/* 左右の境界ドラッグハンドル */
+.dr-resizer{cursor:col-resize;background:var(--border);position:relative;transition:background .12s;user-select:none}
+.dr-resizer:hover,.dr-resizer.dragging{background:var(--accent-mid)}
+.dr-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:28px;border-radius:2px;background:var(--border2)}
+.dr-resizer:hover::after,.dr-resizer.dragging::after{background:#fff}
+/* ドラッグ中は本文の選択・iframe等への吸い込みを止める */
+body.dragging-col{cursor:col-resize;user-select:none}
 /* Left col */
 .detail-left{padding:18px 20px;border-right:1px solid var(--border);overflow-y:auto}
 /* Overview card */
@@ -108,17 +127,24 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 .input-card h3 span{font-size:10px;color:var(--muted);font-weight:400}
 .input-row{margin-bottom:10px}
 .input-row label{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-bottom:3px}
-.input-row textarea{width:100%;font-size:11px;padding:7px 9px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;min-height:72px;line-height:1.6}
+.input-row textarea{width:100%;font-size:12.5px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;min-height:88px;line-height:1.7}
 .rich-toolbar{display:flex;gap:3px;padding:4px 6px;background:var(--bg);border:1px solid var(--border2);border-bottom:none;border-radius:var(--rad) var(--rad) 0 0;flex-wrap:wrap;align-items:center}
 .rtb{font-size:11px;padding:2px 7px;border:1px solid var(--border2);border-radius:3px;background:var(--surface);color:var(--text);cursor:pointer;line-height:1.4}
 .rtb:hover{background:var(--accent-light);border-color:var(--accent-mid)}
 .rtb.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .rtb-sep{width:1px;height:16px;background:var(--border2);margin:0 2px}
-.rich-editor{width:100%;min-height:96px;padding:7px 9px;border:1px solid var(--border2);border-radius:0 0 var(--rad) var(--rad);background:var(--bg);color:var(--text);font-size:11px;line-height:1.6;outline:none;overflow-y:auto}
+.rich-editor{width:100%;min-height:var(--editor-h,240px);padding:10px 12px;border:1px solid var(--border2);border-radius:0 0 var(--rad) var(--rad);background:var(--bg);color:var(--text);font-size:13px;line-height:1.75;outline:none;overflow-y:auto;resize:vertical}
 .rich-editor:focus{border-color:var(--accent-mid);background:var(--surface)}
 .rich-editor .hl-yellow{background:#fff176}
 .rich-editor .hl-green{background:#c8f7c5}
 .rich-editor .hl-blue{background:#c5e8f7}
+/* 進捗入力の全画面モード（長文を書くとき用） */
+.input-row.editor-fs{position:fixed;inset:24px;z-index:9996;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rad2);box-shadow:0 8px 40px rgba(0,0,0,.18);padding:14px 16px;display:flex;flex-direction:column;margin:0}
+.input-row.editor-fs>label{flex:0 0 auto}
+.input-row.editor-fs .rich-toolbar{flex:0 0 auto}
+.input-row.editor-fs .rich-editor{flex:1 1 auto;min-height:0;height:auto;font-size:15px;line-height:1.9;padding:18px 22px;resize:none;background:var(--surface)}
+.editor-fs-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:9995}
+.rtb-fs{margin-left:auto}
 .input-row textarea:focus{outline:none;border-color:var(--accent-mid);background:var(--surface)}
 .input-actions{display:flex;gap:6px;align-items:center}
 .hl-toggle{display:flex;gap:4px;margin-left:auto}
@@ -221,12 +247,37 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 #current-user-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
 #current-user-badge .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--accent)}
 #current-user-badge.admin-mode .user-avatar{background:var(--accent);color:#fff}
-</style>
+
+/* ===== 在室メンバー（プレゼンス） ===== */
+#presence-section{padding:2px 14px 8px}
+#presence-head{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--hint);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 0 5px;cursor:pointer}
+#presence-head .pr-count{margin-left:auto;font-size:9px;background:var(--pos-bg);color:var(--pos);border-radius:8px;padding:1px 6px;font-weight:600;letter-spacing:0}
+#presence-list{display:flex;flex-wrap:wrap;gap:4px}
+.pr-chip{display:flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px 2px 3px;border-radius:11px;background:var(--bg);border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.pr-chip .pr-av{width:18px;height:18px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pr-chip.me{border-color:var(--accent-mid);background:var(--accent-light);color:var(--accent);font-weight:600}
+.pr-chip.idle{opacity:.55}
+.pr-chip .pr-dot{width:5px;height:5px;border-radius:50%;background:var(--pos);flex-shrink:0}
+.pr-chip.idle .pr-dot{background:var(--hint)}
+.pr-chip.adm{border-color:var(--accent-mid)}
+.pr-chip .pr-adm{font-size:9px;margin-left:1px}
+#presence-empty{font-size:10px;color:var(--hint);padding:2px 0}
+#admin-in-use-msg:not(:empty){background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:var(--rad);padding:6px 9px;margin-top:8px;color:var(--accent);text-align:left}
+
+/* ===== 検証サイト専用：誤って入った人向けの警告バー ===== */
+#verify-banner{position:fixed;top:0;left:0;right:0;height:32px;z-index:10000;background:#8b1a1a;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 12px;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+#verify-banner a{color:#fff;text-decoration:underline;font-weight:600;white-space:nowrap}
+body{padding-top:32px}
+.sidebar{top:32px;height:calc(100vh - 32px)}
+.topbar{top:32px}
+#login-screen{top:32px}
+#_offline-banner{top:32px}</style>
 </head>
 <body>
+<div id="verify-banner">⚠ ここは<strong>動作確認用</strong>のサイトです。ここでの入力は週報に反映されません。<a href="https://abd-masu.github.io/weekly-report-sub/">→ 本番サイトを開く</a></div>
 
 <!-- ===== LOGIN SCREEN ===== -->
-<div id="login-screen" style="display:none">
+<div id="login-screen" style="display: flex;">
   <div class="login-wrap">
     <div class="login-title">
       <h1>プロジェクト進捗管理</h1>
@@ -234,7 +285,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="login-card">
       <div class="login-label">メンバーを選択</div>
-      <div id="login-member-list"></div>
+      <div id="login-member-list"><div class="member-row" data-name="角岡" onclick="selectMember(&#39;角岡&#39;)"><div class="member-avatar">SK</div><span class="member-name">角岡</span></div><div class="member-row" data-name="玉木" onclick="selectMember(&#39;玉木&#39;)"><div class="member-avatar">NT</div><span class="member-name">玉木</span></div><div class="member-row" data-name="蔦澤" onclick="selectMember(&#39;蔦澤&#39;)"><div class="member-avatar">GT</div><span class="member-name">蔦澤</span></div><div class="member-row" data-name="池田" onclick="selectMember(&#39;池田&#39;)"><div class="member-avatar">TI</div><span class="member-name">池田</span></div><div class="member-row" data-name="佐々木" onclick="selectMember(&#39;佐々木&#39;)"><div class="member-avatar">TS</div><span class="member-name">佐々木</span></div><div class="member-row" data-name="木下" onclick="selectMember(&#39;木下&#39;)"><div class="member-avatar">KK</div><span class="member-name">木下</span></div><div class="member-row" data-name="増渕" onclick="selectMember(&#39;増渕&#39;)"><div class="member-avatar">MM</div><span class="member-name">増渕</span></div><div class="member-row" data-name="額賀" onclick="selectMember(&#39;額賀&#39;)"><div class="member-avatar">HN</div><span class="member-name">額賀</span></div></div>
       <button id="btn-login-enter" class="btn primary" style="width:100%;margin-top:10px;opacity:0.4;cursor:not-allowed" disabled="" onclick="doLogin(false)">入室する</button>
     </div>
     <div class="login-card">
@@ -260,7 +311,17 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
         <button class="btn" style="font-size:10px;padding:3px 10px;margin-left:6px;background:var(--neg-bg);color:var(--neg);border-color:var(--neg-border);border-radius:var(--rad);font-weight:500" onclick="doLogout()">退室する</button>
       </div>
     </div>
-    <button class="btn ghost admin-only" style="font-size:11px;padding:3px 7px;margin-top:2px;display:none" title="設定" onclick="openDeptSettings()">⚙️</button>
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+      <button class="btn ghost admin-only" style="font-size:11px;padding:3px 7px;margin-top:2px;display:none" title="設定" onclick="openDeptSettings()">⚙️</button>
+      <button class="btn ghost" style="font-size:11px;padding:3px 7px" title="サイドバーを閉じる（幅を広く使う）" onclick="toggleSidebar()">◧</button>
+    </div>
+  </div>
+  <!-- 在室メンバー -->
+  <div id="presence-section">
+    <div id="presence-head" onclick="openPresenceDetail()" title="クリックで在室・アクセス履歴を表示">
+      <span>いま入室中</span><span class="pr-count" id="presence-count">0</span>
+    </div>
+    <div id="presence-list"><div id="presence-empty">確認中…</div></div>
   </div>
   <div class="sb-search">
     <input id="sbSearch" placeholder="プロジェクトを検索…" oninput="filterSidebar(this.value)">
@@ -276,7 +337,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="sb-item" id="nav-report" onclick="showReport()">
       <span>◈</span> SIB Weekly Report出力
-      <span class="sb-count" id="report-badge" style="background: var(--accent); color: rgb(255, 255, 255);">1</span>
+      <span class="sb-count" id="report-badge" style="background: var(--accent); color: rgb(255, 255, 255); display: none;">1</span>
     </div>
   </div>
   <div class="sb-divider"></div>
@@ -316,7 +377,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
   <div id="view-myview" style="display:none">
     <div class="topbar">
       <span class="topbar-title">マイビュー</span>
-      <button class="btn sm" onclick="openMemberSettings()">👥 メンバー編集</button>
+      <button class="btn sm admin-only" style="display:none" onclick="openMemberSettings()">👥 メンバー編集</button>
     </div>
     <div id="myview-tabs" style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:4px;flex-wrap:wrap"></div>
     <div class="content">
@@ -342,7 +403,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
     </div>
     <div class="content">
       <div class="project-list" id="projectList"><div class="pl-item" data-pid="1" onclick="openDetail(1)">
-    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
     <span class="pl-cat">①</span>
     <span class="pl-name">補正情報配信事業</span>
     <span class="pl-owner-col">蔦澤</span>
@@ -387,7 +448,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
     </div>
   </div><div class="pl-item" data-pid="44" onclick="openDetail(44)">
-    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
     <span class="pl-cat">②</span>
     <span class="pl-name">アジアでのカスタマーサポート用のチャットボット導入（Hubspot社）</span>
     <span class="pl-owner-col">池田</span>
@@ -423,7 +484,7 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
     </div>
   </div><div class="pl-item" data-pid="50" onclick="openDetail(50)">
-    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
     <span class="pl-cat">②</span>
     <span class="pl-name">CoordyNavi開発</span>
     <span class="pl-owner-col">池田・木下・角岡・額賀</span>
@@ -432,12 +493,12 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       
     </div>
   </div><div class="pl-item" data-pid="56" onclick="openDetail(56)">
-    <span class="tag" style="background:var(--pos-bg);color:var(--pos);font-size:9px">入力済</span>
+    <span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>
     <span class="pl-cat">②</span>
     <span class="pl-name">CoordyCAD開発</span>
     <span class="pl-owner-col">佐々木・木下・角岡・額賀・池田</span>
     <div class="pl-status">
-      <span class="tag" style="background:var(--accent-light);color:var(--accent);font-size:9px">Report</span>
+      
       
     </div>
   </div><div class="pl-item" data-pid="57" onclick="openDetail(57)">
@@ -901,10 +962,13 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
       <span class="topbar-title" id="detail-topbar-title"></span>
       <button class="btn sm admin-only" id="btn-toggle-status" onclick="toggleProjectStatus()" style="display:none"></button>
       <button class="btn sm admin-only" style="color:var(--neg);border-color:var(--neg-border);display:none" onclick="deleteProject()">🗑 削除</button>
+      <button class="btn sm ghost" id="btn-toggle-right" style="margin-left:auto" title="右パネル（週の切り替え）の表示/非表示" onclick="toggleRightPanel()">▨ 右パネルを隠す</button>
     </div>
-    <div class="detail-wrap">
+    <div class="detail-wrap" id="detailWrap">
       <!-- Left -->
       <div class="detail-left" id="detailLeft"></div>
+      <!-- Resizer -->
+      <div class="dr-resizer" id="drResizer" title="ドラッグで幅を調整／ダブルクリックで初期幅に戻す"></div>
       <!-- Right -->
       <div class="detail-right" id="detailRight"></div>
     </div>
@@ -937,6 +1001,10 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 
 </div>
 </div>
+
+<!-- サイドバー幅ドラッグハンドル／折りたたみ復帰ボタン -->
+<div id="sbResizer" title="ドラッグでサイドバー幅を調整／ダブルクリックで初期幅に戻す"></div>
+<button id="sbRestoreBtn" onclick="toggleSidebar()" title="サイドバーを開く">▶ メニュー</button>
 
 <!-- OVERLAY -->
 <div class="overlay" id="overlay" style="display:none" onclick="closeOverlay(event)">
@@ -28585,8 +28653,8 @@ const LOGS_DEFAULT = {
 // ────────────────────────────────────────────────────────
 // FIREBASE REST API（SDK不要・読み込み順序問題なし）
 // ────────────────────────────────────────────────────────
-const FB_URL  = 'https://weekly-report-sub-default-rtdb.asia-southeast1.firebasedatabase.app/weekly_report_v3';
-const FB_LOG  = 'https://weekly-report-sub-default-rtdb.asia-southeast1.firebasedatabase.app/access_logs';
+const FB_URL  = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/weekly_report_v3';
+const FB_LOG  = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/access_logs';
 
 const fbDB = {
   get(callback){
@@ -28605,38 +28673,43 @@ const fbDB = {
     xhr.ontimeout = function(){ callback(new Error('Timeout'), null); };
     xhr.send();
   },
-  // 全データ一括保存（設定系・projects用）
-  set(data){
+  // 個別パスのみ取得（_tsの確認など、全件GETを避けたい場面用）
+  getPath(path, callback){
     const xhr = new XMLHttpRequest();
-    xhr.open('PUT', `${FB_URL}.json`, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onerror = function(){ console.warn('Firebase save error'); };
-    xhr.send(JSON.stringify(data));
-  },
-  // 個別パスへの部分更新（logs・highlights用）
-  patch(path, data){
-    const xhr = new XMLHttpRequest();
-    xhr.open('PATCH', `${FB_URL}/${path}.json`, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onerror = function(){ console.warn('Firebase patch error:', path); };
-    xhr.send(JSON.stringify(data));
-  },
-  // 個別パスへの上書き（単一ログエントリ用）
-  put(path, data){
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', `${FB_URL}/${path}.json`, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onerror = function(){ console.warn('Firebase put error:', path); };
-    xhr.send(JSON.stringify(data));
-  },
-  // 個別パスの削除
-  delete(path, callback){
-    const xhr = new XMLHttpRequest();
-    xhr.open('DELETE', `${FB_URL}/${path}.json`, true);
-    xhr.onload = function(){ if(callback) callback(null); };
-    xhr.onerror = function(){ console.warn('Firebase delete error:', path); if(callback) callback(new Error('delete failed')); };
+    xhr.open('GET', `${FB_URL}/${path}.json`, true);
+    xhr.timeout = 8000;
+    xhr.onload = function(){
+      if(xhr.status === 200){
+        try{ callback(null, JSON.parse(xhr.responseText)); }
+        catch(e){ callback(e, null); }
+      } else callback(new Error('HTTP '+xhr.status), null);
+    };
+    xhr.onerror   = function(){ callback(new Error('Network error'), null); };
+    xhr.ontimeout = function(){ callback(new Error('Timeout'), null); };
     xhr.send();
   },
+  // 書き込み系の共通処理。HTTPステータスまで見て成否をcallbackで返す
+  // （onerrorだけではFirebaseが400/403を返しても成功扱いになってしまうため）
+  _write(method, path, data, callback){
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, path ? `${FB_URL}/${path}.json` : `${FB_URL}.json`, true);
+    if(data !== undefined) xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.timeout = 12000;
+    const done = function(ok, why){
+      if(!ok) console.warn(`Firebase ${method} failed:`, path, why);
+      if(callback) callback(ok ? null : new Error(why||'failed'));
+    };
+    xhr.onload    = function(){ done(xhr.status>=200 && xhr.status<300, 'HTTP '+xhr.status); };
+    xhr.onerror   = function(){ done(false, 'network'); };
+    xhr.ontimeout = function(){ done(false, 'timeout'); };
+    xhr.send(data === undefined ? null : JSON.stringify(data));
+  },
+  // 個別パスへの部分更新
+  patch(path, data, callback){ this._write('PATCH', path, data, callback); },
+  // 個別パスへの上書き
+  put(path, data, callback){ this._write('PUT', path, data, callback); },
+  // 個別パスの削除
+  delete(path, callback){ this._write('DELETE', path, undefined, callback); },
   // アクセスログ記録（30日以上古いログを自動削除）
   writeLog(action, detail){
     const ts = Date.now();
@@ -28649,10 +28722,16 @@ const fbDB = {
       time: new Date(ts).toISOString(),
       projectCount: PROJECTS ? PROJECTS.length : 0
     }));
-    // 30日以上古いログを削除
+    // 30日以上古いログを削除（1日1回だけ）
     this.cleanOldLogs();
   },
   cleanOldLogs(){
+    // writeLogのたびに全ログをクエリすると通信量が無駄なので、1日1回に制限する
+    try{
+      const today = new Date().toISOString().slice(0,10);
+      if(localStorage.getItem('wr_logclean') === today) return;
+      localStorage.setItem('wr_logclean', today);
+    }catch(e){}
     const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
     const xhr = new XMLHttpRequest();
     xhr.open('GET', `${FB_LOG}.json?orderBy="ts"&endAt=${cutoff}`, true);
@@ -28686,31 +28765,57 @@ function loadState(){
 }
 
 function saveState(){
-  // localStorageにも保存
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify({projects:PROJECTS, logs:LOGS, highlights:HIGHLIGHTS, reportPicks:REPORT_PICKS, deptFull:DEPT_FULL, categories:CATEGORIES})); }catch(e){}
   if(_firebaseSaveTimer) clearTimeout(_firebaseSaveTimer);
   _firebaseSaveTimer = setTimeout(()=>{
-    // 設定系・タイムスタンプのみ更新（logs/projects/highlightsは各操作で個別PUT）
+    // localStorage（オフライン用の控え）。数百KBの同期書き込みなのでデバウンス内で行う
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify({projects:PROJECTS, logs:LOGS, highlights:HIGHLIGHTS, reportPicks:REPORT_PICKS, deptFull:DEPT_FULL, categories:CATEGORIES}));
+    }catch(e){
+      console.warn('localStorage保存に失敗:', e && e.name);
+      if(e && e.name === 'QuotaExceededError') showToast('⚠ 端末の保存領域が上限です（オフライン用の控えは保存できません）');
+    }
+    // 設定系・タイムスタンプのみ更新
+    // （logs/projects/highlights/reportPicksは各操作で該当分のみ個別PUTする。
+    //   ここで全件を書くと、他メンバーの更新を自分の古いコピーで上書きしてしまう）
     const ts = Date.now();
-    window._lastTs = String(ts);
+    window._lastTs = ts;
     fbDB.patch('', {
       deptFull: DEPT_FULL,
       categories: CATEGORIES,
       _ts: ts
     });
-    // REPORT_PICKSは週単位で個別保存（競合防止）
-    Object.entries(REPORT_PICKS).forEach(([week, picks])=>{
-      fbDB.put(`reportPicks/${week}`, picks);
-    });
     fbDB.writeLog('saveState', `projects:${PROJECTS.length} logs:${Object.keys(LOGS).length}`);
   }, 500);
+}
+
+// Reportの選定データを「その週の分だけ」保存する
+// （週ごとにタイマーを分けて、入力中の1文字ごとのPUTを抑える）
+const _picksSaveTimers = {};
+function saveReportPicks(week){
+  const w = week || currentWeek;
+  if(!w) return;
+  clearTimeout(_picksSaveTimers[w]);
+  _picksSaveTimers[w] = setTimeout(()=>{
+    fbDB.put(`reportPicks/${w}`, REPORT_PICKS[w]||[], function(err){
+      if(err) showToast('⚠ Reportの保存に失敗しました。通信を確認してください');
+    });
+  }, 500);
+}
+
+// ハイライトを「その週の分だけ」保存する
+function saveHighlights(week){
+  const w = week || currentWeek;
+  if(!w) return;
+  fbDB.put(`highlights/${w}`, HIGHLIGHTS[w]||[], function(err){
+    if(err) showToast('⚠ ハイライトの保存に失敗しました。通信を確認してください');
+  });
 }
 function applyDeptName(){
   const el2 = document.getElementById('sb-dept-full');
   if(el2) el2.textContent = DEPT_FULL;
 }
 function buildCatOptions(selectedVal){
-  return CATEGORIES.map(c=>`<option value="${c}"${c===selectedVal?' selected':''}>${c}</option>`).join('');
+  return CATEGORIES.map(c=>`<option value="${esc(c)}"${c===selectedVal?' selected':''}>${esc(c)}</option>`).join('');
 }
 
 function openDeptSettings(){
@@ -28722,7 +28827,7 @@ function openDeptSettings(){
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">部署名</div>
       <div class="ef-field">
         <label>部署名（サイドバーに表示）</label>
-        <input id="ds-full" value="${DEPT_FULL}" placeholder="例：アジア事業推進部">
+        <input id="ds-full" value="${esc(DEPT_FULL)}" placeholder="例：アジア事業推進部">
       </div>
       <div style="margin-top:8px;display:flex;justify-content:flex-end">
         <button class="btn sm primary" onclick="saveDeptSettings()">保存</button>
@@ -28738,10 +28843,6 @@ function openDeptSettings(){
       </div>
       <div style="font-size:10px;color:var(--hint);margin-top:6px">※ イニシャルはログイン画面のアイコンに表示されます</div>
     </div>
-    <div style="border-bottom:1px solid var(--border);margin-bottom:14px;padding-bottom:14px">
-      <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">📊 データ使用量</div>
-      <div id="storage-info-wrap" style="font-size:11px;color:var(--muted)">計算中…</div>
-    </div>
     <div>
       <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">カテゴリ管理</div>
       <div id="cat-list-edit" style="margin-bottom:8px"></div>
@@ -28756,49 +28857,7 @@ function openDeptSettings(){
     </div>`;
   renderMemberEditList();
   renderCatEditList();
-  renderStorageInfo();
   document.getElementById('overlay').style.display='flex';
-}
-
-function renderStorageInfo(){
-  const el = document.getElementById('storage-info-wrap');
-  if(!el) return;
-  // データサイズを計算
-  const dataStr = JSON.stringify({projects:PROJECTS, logs:LOGS, highlights:HIGHLIGHTS, reportPicks:REPORT_PICKS});
-  const dataSizeKB = Math.round(new Blob([dataStr]).size / 1024);
-  // 画像サイズを計算
-  let imgSizeKB = 0;
-  let imgCount = 0;
-  Object.values(LOGS).forEach(log=>{
-    if(log.images) {
-      log.images.forEach(img=>{
-        imgSizeKB += Math.round(img.dataUrl.length * 0.75 / 1024);
-        imgCount++;
-      });
-    }
-  });
-  const totalKB = dataSizeKB + imgSizeKB;
-  const totalMB = (totalKB / 1024).toFixed(2);
-  const limitMB = 1024;
-  const pct = Math.min(100, (totalKB / (limitMB * 1024) * 100)).toFixed(1);
-  const barColor = pct > 80 ? 'var(--neg)' : pct > 50 ? '#e08c00' : 'var(--pos)';
-
-  el.innerHTML = `
-    <div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span>使用量: <strong>${totalMB}MB</strong> / 1GB</span>
-        <span style="color:${barColor}">${pct}%</span>
-      </div>
-      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;color:var(--hint)">
-      <span>📝 テキストデータ: ${dataSizeKB}KB</span>
-      <span>🖼 画像データ: ${imgSizeKB}KB（${imgCount}枚）</span>
-      <span>📁 プロジェクト: ${PROJECTS.length}件</span>
-      <span>📊 進捗ログ: ${Object.keys(LOGS).length}件</span>
-    </div>`;
 }
 
 function renderMemberEditList(){
@@ -28807,8 +28866,8 @@ function renderMemberEditList(){
   el.innerHTML = MEMBERS.map((m,i)=>`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
       <input style="width:44px;font-size:11px;padding:4px 6px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);text-transform:uppercase"
-        value="${MEMBER_INITIALS[m]||''}" placeholder="SK" onchange="updateMemberInitial('${m}',this.value)">
-      <span style="flex:1;font-size:12px;color:var(--text)">${m}</span>
+        value="${esc(MEMBER_INITIALS[m]||"")}" placeholder="SK" onchange="updateMemberInitial('${escAttr(m)}',this.value)">
+      <span style="flex:1;font-size:12px;color:var(--text)">${esc(m)}</span>
       <button class="btn sm ghost" style="color:var(--neg)" onclick="removeMemberFromSettings(${i})" title="削除">✕</button>
       ${i>0?`<button class="btn sm ghost" onclick="moveMemberSettings(${i},-1)">↑</button>`:'<span style="width:28px"></span>'}
       ${i<MEMBERS.length-1?`<button class="btn sm ghost" onclick="moveMemberSettings(${i},1)">↓</button>`:'<span style="width:28px"></span>'}
@@ -28856,7 +28915,7 @@ function renderCatEditList(){
   el.innerHTML = CATEGORIES.map((c,i)=>`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
       <input style="flex:1;font-size:11px;padding:4px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text)"
-        value="${c}" id="cat-edit-${i}" onchange="updateCategory(${i},this.value)">
+        value="${esc(c)}" id="cat-edit-${i}" onchange="updateCategory(${i},this.value)">
       <button class="btn sm ghost" style="color:var(--neg)" onclick="removeCategory(${i})" title="削除">✕</button>
       ${i>0?`<button class="btn sm ghost" onclick="moveCat(${i},-1)" title="上へ">↑</button>`:'<span style="width:28px"></span>'}
       ${i<CATEGORIES.length-1?`<button class="btn sm ghost" onclick="moveCat(${i},1)" title="下へ">↓</button>`:'<span style="width:28px"></span>'}
@@ -29098,9 +29157,9 @@ function buildSidebar(){
   const el = document.getElementById('sbCatList');
   el.innerHTML = allCats.map(c=>{
     const count = PROJECTS.filter(p=>p.cat===c&&p.status!=='closed').length;
-    return `<div class="sb-item" onclick="filterByCat('${c}',this)">
-      <span style="font-size:9px">${c.substring(0,1)}</span>
-      <span style="flex:1;font-size:10px">${c.substring(1)}</span>
+    return `<div class="sb-item" onclick="filterByCat('${escAttr(c)}',this)">
+      <span style="font-size:9px">${esc(c.substring(0,1))}</span>
+      <span style="flex:1;font-size:10px">${esc(c.substring(1))}</span>
       <span class="sb-count">${count}</span>
     </div>`;
   }).join('');
@@ -29134,7 +29193,7 @@ function filterByCat(cat, el){
 // ────────────────────────────────────────────────────────
 let myOwner = '';
 let isAdmin = false;
-const FB_ADMIN = 'https://weekly-report-sub-default-rtdb.asia-southeast1.firebasedatabase.app/admin_session';
+const FB_ADMIN = 'https://weekly-report-v2-9c46e-default-rtdb.asia-southeast1.firebasedatabase.app/admin_session';
 
 // イニシャルマスター（メンバー管理と連動）
 const MEMBER_INITIALS = {
@@ -29143,7 +29202,7 @@ const MEMBER_INITIALS = {
 };
 
 function getMemberInitial(name){
-  return MEMBER_INITIALS[name] || name.substring(0,2);
+  return MEMBER_INITIALS[name] || String(name||'').substring(0,2);
 }
 
 let MEMBERS = [];
@@ -29155,13 +29214,13 @@ function loadMembers(){
     const s = localStorage.getItem('wr_members');
     if(s){
       const saved = JSON.parse(s);
-      // 保存済みメンバーが固定リストと一致する場合は固定順を使用
-      if(saved.length === DEFAULT_MEMBERS.length && DEFAULT_MEMBERS.every(m=>saved.includes(m))){
-        MEMBERS = DEFAULT_MEMBERS;
-      } else {
+      // 保存された並び順をそのまま使う。
+      // 「人数が同じなら固定順に戻す」としていたため、8人のまま並べ替えても
+      // リロードで必ず既定順に戻ってしまっていた
+      if(Array.isArray(saved) && saved.length){
         MEMBERS = saved;
+        return;
       }
-      return;
     }
   }catch(e){}
   MEMBERS = DEFAULT_MEMBERS;
@@ -29187,113 +29246,6 @@ function initLoginScreen(){
   renderMemberList(list, null);
 }
 
-// ────────────────────────────────────────────────────────
-// 画像アップロード機能
-// ────────────────────────────────────────────────────────
-const IMG_MAX = 5;
-const IMG_MAX_BYTES = 1024 * 1024; // 1MB
-
-// UI上の編集中画像を一時保持（保存前の状態）
-let _currentImages = [];
-
-function handleImgDrop(event, pid){
-  event.preventDefault();
-  document.getElementById('img-drop-zone').style.background = '';
-  handleImgFiles(event.dataTransfer.files, pid);
-}
-
-function handleImgFiles(files, pid){
-  Array.from(files).forEach(f=>{
-    if(_currentImages.length >= IMG_MAX){ showToast('画像は最大'+IMG_MAX+'枚までです'); return; }
-    if(!f.type.match(/^image\//)) return;
-    compressImage(f, IMG_MAX_BYTES, (dataUrl, compressed)=>{
-      const expireTs = Date.now() + 90*24*60*60*1000;
-      _currentImages.push({dataUrl, name:f.name, expireTs});
-      if(compressed) showToast('画像を自動圧縮しました（1MB以内）');
-      renderImgThumbs(_currentImages, pid);
-      enableSaveBtn();
-    });
-  });
-}
-
-function compressImage(file, maxBytes, callback){
-  const reader = new FileReader();
-  reader.onload = e=>{
-    const img = new Image();
-    img.onload = ()=>{
-      let quality = 0.85;
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      // 長辺1600px以上は縮小
-      if(w > 1600 || h > 1600){
-        const r = Math.min(1600/w, 1600/h);
-        w = Math.round(w*r); h = Math.round(h*r);
-      }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const originalSize = file.size;
-      let dataUrl = canvas.toDataURL('image/jpeg', quality);
-      // 1MB超えたらqualityを下げて再圧縮
-      while(dataUrl.length * 0.75 > maxBytes && quality > 0.3){
-        quality -= 0.1;
-        dataUrl = canvas.toDataURL('image/jpeg', quality);
-      }
-      const compressed = originalSize > maxBytes || w < img.width;
-      callback(dataUrl, compressed);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderImgThumbs(images, pid){
-  const container = document.getElementById('img-thumbs');
-  const counter = document.getElementById('img-counter');
-  if(!container) return;
-  const expireStr = ts=>{
-    const d = new Date(ts);
-    return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+'まで';
-  };
-  container.innerHTML = images.map((img,i)=>`
-    <div style="position:relative;width:80px;height:80px;border-radius:var(--rad);overflow:hidden;border:0.5px solid var(--border2);cursor:pointer" onclick="openImgModal('${img.dataUrl}')">
-      <img src="${img.dataUrl}" style="width:100%;height:100%;object-fit:cover" alt="${img.name}">
-      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);font-size:8px;color:#fff;padding:2px 3px;text-align:center">${expireStr(img.expireTs)}</div>
-      <button style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.5);border:none;border-radius:50%;width:17px;height:17px;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0"
-        onclick="event.stopPropagation();removeImg(${i},${pid})">×</button>
-    </div>`).join('');
-  if(counter) counter.textContent = images.length > 0 ? images.length+' / '+IMG_MAX+' 枚' : '';
-}
-
-function removeImg(idx, pid){
-  _currentImages.splice(idx, 1);
-  renderImgThumbs(_currentImages, pid);
-  enableSaveBtn();
-}
-
-function openImgModal(dataUrl){
-  let modal = document.getElementById('_img_modal');
-  if(!modal){
-    modal = document.createElement('div');
-    modal.id = '_img_modal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-    modal.onclick = ()=>modal.remove();
-    document.body.appendChild(modal);
-  }
-  modal.innerHTML = `<img src="${dataUrl}" style="max-width:90vw;max-height:85vh;border-radius:var(--rad);object-fit:contain">`;
-}
-
-function cleanExpiredImages(){
-  const now = Date.now();
-  let changed = false;
-  Object.values(LOGS).forEach(log=>{
-    if(!log.images) return;
-    const before = log.images.length;
-    log.images = log.images.filter(img=>img.expireTs > now);
-    if(log.images.length !== before) changed = true;
-  });
-  if(changed) saveState();
-}
-
 function selectMember(name){
   loginSelected = name;
   document.querySelectorAll('#login-member-list .member-row').forEach(r=>r.classList.remove('selected'));
@@ -29303,13 +29255,14 @@ function selectMember(name){
   if(btnEnter){ btnEnter.disabled=false; btnEnter.style.opacity='1'; btnEnter.style.cursor='pointer'; }
   const btnAdmin = document.getElementById('btn-login-admin');
   if(btnAdmin){ btnAdmin.disabled=false; btnAdmin.style.opacity='1'; btnAdmin.style.cursor='pointer'; }
-  document.getElementById('admin-in-use-msg').textContent='';
+  // 管理者の在室案内は消さずに出したままにする（メンバーを選び直しても情報は有効なため）
+  updateAdminInUseMsg();
 }
 
 function renderMemberList(list, adminName){
   list.innerHTML = MEMBERS.map(name=>{
     const initial = getMemberInitial(name);
-    return `<div class="member-row" data-name="${name}" onclick="selectMember('${name}')"><div class="member-avatar">${initial}</div><span class="member-name">${name}</span></div>`;
+    return `<div class="member-row" data-name="${esc(name)}" onclick="selectMember('${escAttr(name)}')"><div class="member-avatar">${esc(initial)}</div><span class="member-name">${esc(name)}</span></div>`;
   }).join('');
 }
 
@@ -29352,23 +29305,22 @@ function doLogin(admin){
   document.getElementById('login-screen').style.display = 'none';
   updateUserBadge();
   applyAdminUI();
+  startPresence();
 }
 
 function doLogout(){
-  try{ sessionStorage.removeItem('wr_myowner'); sessionStorage.removeItem('wr_myowner'); sessionStorage.removeItem('wr_isadmin'); }catch(e){}
-  if(isAdmin){
-    releaseAdminSession(()=>{
-      fbDB.writeLog('logout', `name:${myOwner} admin:${isAdmin}`);
-      myOwner = ''; isAdmin = false; loginSelected = null;
-      document.getElementById('login-screen').style.display = 'flex';
-      initLoginScreen();
-    });
-  } else {
-    fbDB.writeLog('logout', `name:${myOwner} admin:${isAdmin}`);
+  try{ sessionStorage.removeItem('wr_isadmin'); sessionStorage.removeItem('wr_myowner'); }catch(e){}
+  const leavingName = myOwner;
+  const finish = ()=>{
+    fbDB.writeLog('logout', `name:${leavingName} admin:${isAdmin}`);
+    stopPresence(leavingName);
     myOwner = ''; isAdmin = false; loginSelected = null;
+    renderPresence();
     document.getElementById('login-screen').style.display = 'flex';
     initLoginScreen();
-  }
+  };
+  if(isAdmin) releaseAdminSession(finish);
+  else finish();
 }
 
 function releaseAdminSession(callback){
@@ -29397,6 +29349,7 @@ function applyAdminUI(){
 }
 
 function showMyView(){
+  if(!confirmDiscardUnsaved()) return;
   ['list','detail','report','archive','myview'].forEach(v=>{
     const el = document.getElementById('view-'+v);
     if(el) el.style.display = v==='myview'?'block':'none';
@@ -29412,8 +29365,8 @@ function buildMyViewTabs(){
   const tabs = document.getElementById('myview-tabs');
   if(!tabs) return;
   tabs.innerHTML = MEMBERS.map(m=>`
-    <div onclick="selectMyViewMember('${m}')" style="padding:8px 14px;font-size:12px;cursor:pointer;border-bottom:2px solid ${m===myOwner?'var(--accent)':'transparent'};color:${m===myOwner?'var(--accent)':'var(--muted)'};font-weight:${m===myOwner?'600':'400'};transition:.1s">
-      ${m}
+    <div onclick="selectMyViewMember('${escAttr(m)}')" style="padding:8px 14px;font-size:12px;cursor:pointer;border-bottom:2px solid ${m===myOwner?'var(--accent)':'transparent'};color:${m===myOwner?'var(--accent)':'var(--muted)'};font-weight:${m===myOwner?'600':'400'};transition:.1s">
+      ${esc(m)}
     </div>`).join('');
 }
 
@@ -29456,21 +29409,12 @@ function renderMyView(){
       : '<div class="empty">担当案件がありません</div>');
 }
 
+// マイビューの「👥 メンバー編集」。
+// 以前は独自のモーダルを開いていたが、要素IDが member-list-edit / member-edit-list と
+// 逆になっていて一覧が表示されず、さらに追加ボタンが未定義の addMember() を呼んでいて
+// 何も起きなかった。設定画面のメンバー管理が正しく動くので、そちらに一本化する。
 function openMemberSettings(){
-  const body = document.getElementById('modalBody');
-  body.innerHTML = `
-    <h3>👥 メンバー管理</h3>
-    <div id="member-list-edit" style="margin-bottom:10px"></div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <input id="new-member-input" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--text)" placeholder="メンバー名を追加（例：蔦澤）">
-      <button class="btn sm primary" onclick="addMember()">＋ 追加</button>
-    </div>
-    <div style="font-size:10px;color:var(--hint);margin-top:8px">メンバーはマイビューのタブとして表示されます</div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closeOverlay()">閉じる</button>
-    </div>`;
-  renderMemberEditList();
-  document.getElementById('overlay').style.display='flex';
+  openDeptSettings();
 }
 
 
@@ -29487,6 +29431,7 @@ function filterSidebar(q){
 // LIST VIEW
 // ────────────────────────────────────────────────────────
 function showList(){
+  if(!confirmDiscardUnsaved()) return;
   ['list','detail','report','archive','myview'].forEach(v=>{
     const el = document.getElementById('view-'+v);
     if(el) el.style.display = v==='list'?'block':'none';
@@ -29504,7 +29449,7 @@ function buildOwnerSelect(){
   const catSel = document.getElementById('fCat');
   if(catSel){
     const curCat = catSel.value;
-    catSel.innerHTML = '<option value="">全カテゴリ</option>' + CATEGORIES.map(c=>`<option value="${c}"${c===curCat?' selected':''}>${c}</option>`).join('');
+    catSel.innerHTML = '<option value="">全カテゴリ</option>' + CATEGORIES.map(c=>`<option value="${esc(c)}"${c===curCat?' selected':''}>${esc(c)}</option>`).join('');
   }
   const sel = document.getElementById('fOwner');
   if(!sel) return;
@@ -29527,7 +29472,7 @@ function buildOwnerSelect(){
       .filter(o=> o.length > 0 && !EXCLUDE_OWNERS.includes(o))
   )].sort((a,b)=>a.localeCompare(b,'ja'));
   sel.innerHTML = '<option value="">全担当者</option>' +
-    owners.map(o=>`<option value="${o}"${o===current?' selected':''}>${o}</option>`).join('');
+    owners.map(o=>`<option value="${esc(o)}"${o===current?' selected':''}>${esc(o)}</option>`).join('');
 }
 
 function buildWeekSelect(){
@@ -29620,8 +29565,8 @@ function renderProjectCard(p){
   return `<div class="${cls}" data-pid="${p.id}" onclick="openDetail(${p.id})">
     ${inputBadge}
     <span class="pl-cat">${p.cat.substring(0,1)}</span>
-    <span class="pl-name">${p.name}</span>
-    <span class="pl-owner-col">${ownerParts.join('・')}</span>
+    <span class="pl-name">${esc(p.name)}</span>
+    <span class="pl-owner-col">${esc(ownerParts.join("・"))}</span>
     <div class="pl-status">
       ${inReport?'<span class="tag" style="background:var(--accent-light);color:var(--accent);font-size:9px">Report</span>':''}
       ${p.status==='closed'?'<span class="tag" style="font-size:9px">終了</span>':''}
@@ -29655,7 +29600,7 @@ function renderArchive(){
     return `<div class="pl-item" onclick="openDetailFromArchive(${p.id})" style="border-left:3px solid var(--hint)">
       <div class="dot dot-closed"></div>
       <span class="pl-cat">${p.cat.substring(0,1)}</span>
-      <span class="pl-name">${p.name}</span>
+      <span class="pl-name">${esc(p.name)}</span>
       <span class="pl-owner">${p.owner.split('・')[0]}${p.owner.includes('・')?'…':''}</span>
       <div class="pl-status"><span class="tag">終了</span></div>
     </div>`;
@@ -29678,9 +29623,12 @@ function openDetailFromArchive(pid){
 // DETAIL VIEW
 // ────────────────────────────────────────────────────────
 function openDetail(pid){
+  if(!confirmDiscardUnsaved()) return;
   currentProjectId = Number(pid);
-  ['list','detail','report','archive'].forEach(v=>{
-    document.getElementById('view-'+v).style.display = v==='detail'?'block':'none';
+  // 'myview'が抜けていたため、マイビューから案件を開くと二重表示になっていた
+  ['list','detail','report','archive','myview'].forEach(v=>{
+    const el = document.getElementById('view-'+v);
+    if(el) el.style.display = v==='detail'?'block':'none';
   });
   ['nav-list','nav-report','nav-archive'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
   document.getElementById('nav-list').classList.add('active');
@@ -29700,11 +29648,6 @@ function renderDetail(){
 
   renderDetailLeft(p);
   renderDetailRight(p);
-
-  // 既存の画像を_currentImagesに読み込み
-  const log = getLog(p.id, currentWeek)||{};
-  _currentImages = log.images ? [...log.images] : [];
-  renderImgThumbs(_currentImages, p.id);
 }
 
 function renderDetailLeft(p){
@@ -29727,19 +29670,19 @@ function renderDetailLeft(p){
     <div class="overview-card" id="ov-card">
       <div class="ov-header">
         <div class="ov-title">
-          <h2>${p.name}</h2>
-          <p>${p.cat} ／ 担当: ${p.owner}</p>
+          <h2>${esc(p.name)}</h2>
+          <p>${esc(p.cat)} ／ 担当: ${esc(p.owner)}</p>
         </div>
         <button class="btn sm" onclick="toggleEditForm()">編集</button>
       </div>
       <div class="ov-body">
         <div class="ov-field ov-field-full">
           <label>概要</label>
-          <span>${p.summary||'—'}</span>
+          <span>${esc(p.summary||'—')}</span>
         </div>
         <div class="ov-field ov-field-full">
           <label>KPI・達成目標</label>
-          <span class="kpi-text">${p.kpi||'—'}</span>
+          <span class="kpi-text">${esc(p.kpi||'—')}</span>
         </div>
       </div>
     </div>
@@ -29775,7 +29718,7 @@ function renderDetailLeft(p){
     <!-- Input Card -->
     <div class="input-card" id="input-card">
       <h3>今週の進捗入力 <span>${weekLabel(currentWeek)}</span></h3>
-      <div class="input-row">
+      <div class="input-row" id="progress-row">
         <label>進捗・アップデート（ポジティブ・ネガティブも記載）</label>
         <div class="rich-toolbar">
           <button class="rtb" title="太字" onclick="rfmt('bold')"><b>B</b></button>
@@ -29795,33 +29738,15 @@ function renderDetailLeft(p){
           <button class="rtb" title="小" onclick="rfmt('fontSize','2')" style="font-size:9px">小</button>
           <button class="rtb" title="標準" onclick="rfmt('fontSize','3')" style="font-size:11px">中</button>
           <button class="rtb" title="大" onclick="rfmt('fontSize','4')" style="font-size:13px">大</button>
+          <button class="rtb rtb-fs" id="btn-editor-fs" title="全画面で編集（Escで戻る）" onclick="toggleEditorFullscreen()">⛶ 全画面</button>
         </div>
         <div class="rich-editor" id="inp-progress" contenteditable="true"
-          onfocus="fbDB.writeLog('edit_start', 'pid:${p.id} week:${currentWeek}')"
+          onfocus="logEditStart('${p.id}','${currentWeek}')"
           oninput="enableSaveBtn()">${log.progress||''}</div>
       </div>
       <div class="input-row">
         <label>次のアクション</label>
         <textarea id="inp-next" placeholder="来週やること・フォローアップ項目…" style="min-height:52px" oninput="enableSaveBtn()">${esc(log.nextAction)}</textarea>
-      </div>
-      </div>
-
-      <!-- 画像アップロード -->
-      <div class="input-row">
-        <label style="display:flex;align-items:center;gap:6px">添付画像
-          <span style="font-size:10px;color:var(--warn);background:var(--warn-bg);padding:2px 7px;border-radius:10px">保存から3ヶ月で自動削除</span>
-        </label>
-        <div id="img-drop-zone" style="border:1.5px dashed var(--border2);border-radius:var(--rad);padding:14px;text-align:center;cursor:pointer;font-size:12px;color:var(--hint)"
-          ondragover="event.preventDefault();this.style.background=\'var(--surface)\'"
-          ondragleave="this.style.background=\'\'"
-          ondrop="handleImgDrop(event,${p.id})"
-          onclick="document.getElementById(\'img-file-input\').click()">
-          📎 画像をドラッグ＆ドロップ、またはクリックして選択<br>
-          <span style="font-size:10px;color:var(--hint)">最大5枚・JPEG・PNG・HEIC・WebP対応 / 1MB超えは自動圧縮、それ以下はそのまま保存</span>
-        </div>
-        <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="handleImgFiles(this.files,${p.id})">
-        <div id="img-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
-        <div id="img-counter" style="font-size:10px;color:var(--hint);text-align:right;margin-top:4px"></div>
       </div>
       <div class="input-actions">
         <button class="btn sm primary" id="save-btn" onclick="saveLog(${p.id})" disabled style="opacity:0.4;cursor:not-allowed">保存</button>
@@ -29953,6 +29878,7 @@ function toggleHistMore(){
 }
 
 function switchWeek(w){
+  if(!confirmDiscardUnsaved()) return;
   currentWeek = w;
   renderDetail();
   // 週切替後、入力カードへ自動スクロール
@@ -29995,6 +29921,28 @@ function enableSaveBtn(){
   btn.style.cursor = 'pointer';
 }
 
+// 保存ボタンが押せる状態＝未保存の入力がある
+function hasUnsavedInput(){
+  const btn = document.getElementById('save-btn');
+  return !!(btn && !btn.disabled && document.getElementById('view-detail')?.style.display === 'block');
+}
+
+// 未保存のまま画面を切り替えようとしたら確認する
+// （週の切り替えや案件の切り替えは innerHTML を作り直すため、黙って消えていた）
+function confirmDiscardUnsaved(){
+  if(!hasUnsavedInput()) return true;
+  return confirm('保存していない入力があります。\n破棄して移動しますか？\n\n（「キャンセル」を押すと、このまま編集を続けられます）');
+}
+
+// edit_startログは初回フォーカス時だけ記録する（フォーカスのたびに通信していた）
+const _editStartLogged = {};
+function logEditStart(pid, week){
+  const k = pid + '_' + week;
+  if(_editStartLogged[k]) return;
+  _editStartLogged[k] = true;
+  fbDB.writeLog('edit_start', `pid:${pid} week:${week}`);
+}
+
 function saveLog(pid){
   const progressEl = document.getElementById('inp-progress');
   const rawProgress = progressEl ? (progressEl.value !== undefined ? progressEl.value.trim() : progressEl.innerHTML.trim()) : '';
@@ -30003,21 +29951,44 @@ function saveLog(pid){
   const nextAction = document.getElementById('inp-next').value.trim();
   const existing = getLog(pid, currentWeek);
   const hlType = existing?.hlType||'';
-  const images = _currentImages;
   const charsBefore = (existing?.progress||'').length;
-  LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType, images};
-  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType, images});
-  fbDB.writeLog('edit_save', `pid:${pid} week:${currentWeek} chars_before:${charsBefore} chars_after:${progress.length}`);
-  saveState();
-  // 保存ボタンをグレーに戻す＋完了表示
+  LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType};
+
+  // 保存中はボタンを止める
   const btn = document.getElementById('save-btn');
   if(btn){
     btn.disabled = true;
     btn.style.opacity = '0.4';
     btn.style.cursor = 'not-allowed';
-    btn.textContent = '✓ 保存しました';
-    setTimeout(()=>{ btn.textContent = '保存'; }, 2000);
+    btn.textContent = '保存中…';
   }
+
+  // Firebaseの応答を待ってから結果を表示する（送っただけで「保存しました」と出すと、
+  // 失敗しても成功に見えてしまい、タブを閉じた時点で進捗が消える）
+  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType}, function(err){
+    // renderDetail()でボタンが作り直されているため、IDで取り直す
+    const b = document.getElementById('save-btn');
+    if(err){
+      showToast('⚠ 保存できませんでした。通信を確認して、もう一度「保存」を押してください');
+      if(b){
+        b.disabled = false;
+        b.style.opacity = '1';
+        b.style.cursor = 'pointer';
+        b.textContent = '⟳ 再保存';
+      }
+      return;
+    }
+    if(b){
+      b.textContent = '✓ 保存しました';
+      setTimeout(()=>{
+        const b2 = document.getElementById('save-btn');
+        if(b2 && b2.textContent === '✓ 保存しました') b2.textContent = '保存';
+      }, 2000);
+    }
+  });
+
+  fbDB.writeLog('edit_save', `pid:${pid} week:${currentWeek} chars_before:${charsBefore} chars_after:${progress.length}`);
+  saveState();
   renderDetail();
 }
 
@@ -30032,6 +30003,7 @@ function toggleReportPick(pid){
     const log = getLog(pid, currentWeek)||{};
     picks.push({projectId:pid, editedText: log.progress||'', hlType: (HIGHLIGHTS[currentWeek]||[]).find(h=>h.projectId===pid)?.type||''});
   }
+  saveReportPicks(currentWeek);
   saveState();
   updateReportBadge();
   renderDetail();
@@ -30048,8 +30020,10 @@ function toggleHL(pid, type){
     log.hlType=type;
   }
   LOGS[logKey(pid,currentWeek)] = {...(getLog(pid,currentWeek)||{}), ...log};
-  fbDB.put(`highlights/${currentWeek}`, HIGHLIGHTS[currentWeek]||[]);
-  fbDB.put(`logs/${logKey(pid,currentWeek)}`, LOGS[logKey(pid,currentWeek)]);
+  saveHighlights(currentWeek);
+  fbDB.put(`logs/${logKey(pid,currentWeek)}`, LOGS[logKey(pid,currentWeek)], function(err){
+    if(err) showToast('⚠ ハイライトの保存に失敗しました。通信を確認してください');
+  });
   saveState();
   renderDetail();
 }
@@ -30062,20 +30036,29 @@ function deleteProject(){
   fbDB.writeLog('project_delete', `pid:${p.id} name:${p.name}`);
   const idx = PROJECTS.findIndex(x=>x.id===currentProjectId);
   if(idx>=0) PROJECTS.splice(idx,1);
-  window._lastTs = String(Date.now());
+  window._lastTs = Date.now();
   // Firebase削除完了後に画面更新
-  fbDB.delete(`projects/${currentProjectId}`, ()=>{
+  fbDB.delete(`projects/${currentProjectId}`, (err)=>{
+    if(err){
+      showToast('⚠ 削除に失敗しました。通信を確認してもう一度お試しください');
+      PROJECTS.splice(idx<0?PROJECTS.length:idx, 0, p);  // ローカルの削除を巻き戻す
+      buildSidebar(); renderList();
+      return;
+    }
     Object.keys(LOGS).filter(k=>k.startsWith(currentProjectId+'_') && k.split('_')[0]==String(currentProjectId)).forEach(k=>{
       fbDB.delete(`logs/${k}`);
       delete LOGS[k];
     });
-    Object.values(HIGHLIGHTS).forEach(hls=>{
+    // ハイライト・Report選定は、変更のあった週だけサーバにも反映する
+    Object.keys(HIGHLIGHTS).forEach(w=>{
+      const hls = HIGHLIGHTS[w]||[];
       const i = hls.findIndex(h=>h.projectId===currentProjectId);
-      if(i>=0) hls.splice(i,1);
+      if(i>=0){ hls.splice(i,1); saveHighlights(w); }
     });
-    Object.values(REPORT_PICKS).forEach(picks=>{
+    Object.keys(REPORT_PICKS).forEach(w=>{
+      const picks = REPORT_PICKS[w]||[];
       const i = picks.findIndex(r=>r.projectId===currentProjectId);
-      if(i>=0) picks.splice(i,1);
+      if(i>=0){ picks.splice(i,1); saveReportPicks(w); }
     });
     saveState();
     buildSidebar();
@@ -30089,7 +30072,7 @@ function toggleProjectStatus(){
   if(!p) return;
   if(p.status==='closed'){
     p.status='active';
-    window._lastTs = String(Date.now());
+    window._lastTs = Date.now();
     fbDB.put(`projects/${p.id}`, p);
     fbDB.writeLog('project_restore', `pid:${p.id} name:${p.name}`);
     saveState();
@@ -30099,7 +30082,7 @@ function toggleProjectStatus(){
   } else {
     if(!confirm(`「${p.name}」をクローズしますか？\n\n一覧からは非表示になりますが、サイドバーの「終了案件」から確認・復活できます。`)) return;
     p.status='closed';
-    window._lastTs = String(Date.now());
+    window._lastTs = Date.now();
     fbDB.put(`projects/${p.id}`, p);
     fbDB.writeLog('project_close', `pid:${p.id} name:${p.name}`);
     saveState();
@@ -30112,6 +30095,7 @@ function toggleProjectStatus(){
 // REPORT VIEW
 // ────────────────────────────────────────────────────────
 function showReport(){
+  if(!confirmDiscardUnsaved()) return;
   ['list','detail','report','archive','myview'].forEach(v=>{
     const el = document.getElementById('view-'+v);
     if(el) el.style.display = v==='report'?'block':'none';
@@ -30130,14 +30114,14 @@ function renderReport(){
   el.innerHTML = `
     <div class="rp-week-sel">
       <label>対象週:</label>
-      <select onchange="currentWeek=this.value;_rpSelectedImages={};renderReport()">
+      <select onchange="currentWeek=this.value;renderReport()">
         ${WEEKS.map(w=>`<option value="${w}"${w===currentWeek?' selected':''}>${weekLabel(w)}</option>`).join('')}
       </select>
       ${picks.length>0 && hasEditing
         ? `<button class="btn sm primary" onclick="confirmAllPicks()" style="background:var(--pos);border-color:var(--pos)">💾 保存（編集を確定）</button>`
         : ''
       }
-      <button class="btn sm primary" onclick="generateWord()">📝 Word出力（.docx）</button>
+      <button class="btn sm primary" id="btn-genword" onclick="generateWord()">📝 Word出力（.docx）</button>
     </div>
     ${picks.length===0
       ? '<div style="font-size:11px;color:var(--warn);padding:12px 0">プロジェクト詳細の「＋ Reportに追加」ボタンで案件を追加してください</div>'
@@ -30168,15 +30152,11 @@ function rpCard(pk, idx){
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-right:180px">
         <span style="font-size:10px;color:${hlColor}">${hlLabel}</span>
-        <span style="font-size:12px;font-weight:600">${pk.editedName||p?.name||'—'}</span>
-        <span style="font-size:10px;color:var(--muted)">${p?.cat||''}</span>
+        <strong style="font-size:12px">${esc(p?.name||"—")}</strong>
+        <span style="font-size:10px;color:var(--muted)">${esc(p?.cat||"")}</span>
       </div>
       <div style="font-size:11px;color:var(--text);background:var(--bg);padding:8px 10px;border-radius:var(--rad);white-space:pre-wrap;line-height:1.65;border:1px solid var(--border)">${esc(stripHtml(pk.editedText||log.progress||''))}</div>
       ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:6px">→ 次のアクション: ${esc(stripHtml(log.nextAction))}</div>`:''}
-      ${(log.images&&log.images.length>0)?`<div style="margin-top:8px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">添付画像（Wordに載せる画像を選択）<span style="margin-left:auto;float:right">選択中: <span id="img-sel-cnt-${idx}">0</span>枚</span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${log.images.map((img,ii)=>`<div id="rp-img-${idx}-${ii}" onclick="toggleRpImg(${idx},${ii})" style="position:relative;width:64px;height:64px;border-radius:var(--rad);overflow:hidden;border:1.5px solid var(--border2);cursor:pointer"><img src="${img.dataUrl}" style="width:100%;height:100%;object-fit:cover"><div id="rp-img-chk-${idx}-${ii}" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#378ADD;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:10px;color:#fff">✓</div></div>`).join('')}</div>
-      </div>`:''}
     </div>`;
   }
 
@@ -30189,8 +30169,8 @@ function rpCard(pk, idx){
         <option value="pos" ${hlType==='pos'?'selected':''}>☆ Positive</option>
         <option value="neg" ${hlType==='neg'?'selected':''}>★ Concern</option>
       </select>
-      <input value="${esc(pk.editedName||p?.name||'')}" style="font-size:12px;font-weight:600;border:none;border-bottom:1px solid var(--border2);background:transparent;color:var(--text);padding:1px 4px;min-width:150px;flex:1" placeholder="プロジェクト名" oninput="updatePickName(${idx},this.value)">
-      <span style="font-size:10px;color:var(--muted)">${p?.cat||''}</span>
+      <strong style="font-size:12px">${esc(p?.name||"—")}</strong>
+      <span style="font-size:10px;color:var(--muted)">${esc(p?.cat||"")}</span>
       <button class="btn sm" style="margin-left:auto;color:var(--neg);font-size:10px;padding:2px 8px"
         onclick="removePick(${idx})">削除</button>
     </div>
@@ -30200,75 +30180,28 @@ function rpCard(pk, idx){
     <textarea style="width:100%;font-size:11px;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;min-height:80px;line-height:1.6"
       oninput="updatePickText(${idx},this.value)">${esc(stripHtml(pk.editedText||log.progress||''))}</textarea>
     ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:4px">→ 次のアクション: ${esc(stripHtml(log.nextAction))}</div>`:''}
-    ${(log.images&&log.images.length>0)?`<div style="margin-top:8px">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">添付画像（Wordに載せる画像を選択）<span style="margin-left:auto;float:right">選択中: <span id="img-sel-cnt-${idx}">0</span>枚</span></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">${log.images.map((img,ii)=>`<div id="rp-img-${idx}-${ii}" onclick="toggleRpImg(${idx},${ii})" style="position:relative;width:64px;height:64px;border-radius:var(--rad);overflow:hidden;border:1.5px solid var(--border2);cursor:pointer"><img src="${img.dataUrl}" style="width:100%;height:100%;object-fit:cover"><div id="rp-img-chk-${idx}-${ii}" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#378ADD;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:10px;color:#fff">✓</div></div>`).join('')}</div>
-    </div>`:''}
   </div>`;
-}
-
-// Report画面での選択画像をメモリ管理
-let _rpSelectedImages = {}; // {pickIdx: [imgIdx, ...]}
-
-function toggleRpImg(pickIdx, imgIdx){
-  if(!_rpSelectedImages[pickIdx]) _rpSelectedImages[pickIdx] = [];
-  const sel = _rpSelectedImages[pickIdx];
-  const pos = sel.indexOf(imgIdx);
-  if(pos >= 0){
-    sel.splice(pos, 1);
-  } else {
-    sel.push(imgIdx);
-  }
-  // UI更新
-  const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
-  const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
-  if(chk) chk.style.display = sel.includes(imgIdx) ? 'flex' : 'none';
-  if(box) box.style.border = sel.includes(imgIdx) ? '1.5px solid #378ADD' : '1.5px solid var(--border2)';
-  // カウント更新
-  const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
-  if(cnt) cnt.textContent = sel.length;
-}
-
-function getSelectedRpImages(pickIdx, log){
-  if(!log.images || !log.images.length) return [];
-  const sel = _rpSelectedImages[pickIdx] || [];
-  return sel.map(ii=>log.images[ii]).filter(Boolean);
 }
 
 function confirmAllPicks(){
   (REPORT_PICKS[currentWeek]||[]).forEach(pk=>{ pk.confirmed = true; });
+  saveReportPicks(currentWeek);
   saveState();
-  const savedSelection = JSON.parse(JSON.stringify(_rpSelectedImages));
   renderReport();
-  _rpSelectedImages = savedSelection;
-  // UIのチェックマークを復元
-  Object.entries(_rpSelectedImages).forEach(([pickIdx, idxList])=>{
-    idxList.forEach(imgIdx=>{
-      const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
-      const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
-      if(chk) chk.style.display = 'flex';
-      if(box) box.style.border = '1.5px solid #378ADD';
-    });
-    const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
-    if(cnt) cnt.textContent = idxList.length;
-  });
 }
 
 function unconfirmPick(idx){
   const picks = REPORT_PICKS[currentWeek]||[];
   if(picks[idx]) picks[idx].confirmed = false;
+  saveReportPicks(currentWeek);
   saveState();
   renderReport();
-}
-
-function updatePickName(idx, val){
-  const picks = REPORT_PICKS[currentWeek]||[];
-  if(picks[idx]) picks[idx].editedName = val;
 }
 
 function updatePickText(idx, val){
   const picks = REPORT_PICKS[currentWeek]||[];
   if(picks[idx]) picks[idx].editedText = val;
+  saveReportPicks(currentWeek);
   saveState();
 }
 
@@ -30276,6 +30209,7 @@ function updatePickHL(idx, val){
   const picks = REPORT_PICKS[currentWeek]||[];
   if(picks[idx]){
     picks[idx].hlType = val;
+    saveReportPicks(currentWeek);
     saveState();
     renderReport();
   }
@@ -30289,8 +30223,12 @@ function removePick(idx){
   if(removed){
     const hls = HIGHLIGHTS[currentWeek]||[];
     const hi = hls.findIndex(h=>h.projectId===removed.projectId);
-    if(hi>=0) hls.splice(hi,1);
+    if(hi>=0){
+      hls.splice(hi,1);
+      saveHighlights(currentWeek);   // サーバにも反映しないと次のポーリングで復活する
+    }
   }
+  saveReportPicks(currentWeek);
   saveState();
   updateReportBadge();
   renderReport();
@@ -30300,7 +30238,7 @@ function removePick(idx){
 function updateHLMemo(pid, week, val){
   const hls = HIGHLIGHTS[week]||[];
   const h = hls.find(x=>x.projectId===pid);
-  if(h) h.memo=val;
+  if(h){ h.memo=val; saveHighlights(week); }
   saveState();
 }
 
@@ -30314,29 +30252,34 @@ async function generateWord(){
     return;
   }
 
-  const btn = document.querySelector('#reportWrap .btn.primary');
-  btn.disabled=true; btn.textContent='⏳ 生成中…';
+  // id指定で取得する。querySelectorだと、未確定のpickがあるときに先に描画される
+  // 「💾 保存（編集を確定）」ボタンを掴んでしまい、そちらのラベルが化けていた
+  const btn = document.getElementById('btn-genword') || document.querySelector('#reportWrap .btn.primary');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ 生成中…'; }
 
   try {
-    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, HeadingLevel, ImageRun } = window.docx || docx;
+    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, HeadingLevel } = window.docx || docx;
     const week = weekLabel(currentWeek);
     const picks_data = REPORT_PICKS[currentWeek]||[];
 
     const children = [];
 
     // ヘッダー
-    // Asia Business Development Dept. 〈SA事〉（太字・10.5pt・下線）
     children.push(new Paragraph({
-      spacing: { after: 0 },
+      alignment: AlignmentType.RIGHT,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: week, size: 18, color: '888888', font: 'Arial' })]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 40 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: '1e3a5f', space: 4 } },
       children: [
-        new TextRun({ text: 'Asia Business Development Dept.', bold: true, size: 21, underline: { type: 'single' }, font: 'Arial' }),
-        new TextRun({ text: '　〈SA事〉', bold: true, size: 21, underline: { type: 'single' }, font: 'Yu Gothic' })
+        new TextRun({ text: 'スマートインフラ事業本部　Asia Business Development Dept.', bold: true, size: 22, font: 'Yu Gothic' })
       ]
     }));
-    // Concerns & Positives
     children.push(new Paragraph({
-      spacing: { before: 60, after: 180 },
-      children: [new TextRun({ text: 'Concerns & Positives', size: 21, font: 'Arial' })]
+      spacing: { before: 200, after: 120 },
+      children: [new TextRun({ text: 'Topics of this week', bold: true, size: 24, color: '1e3a5f', font: 'Arial' })]
     }));
 
     // 各案件
@@ -30346,22 +30289,15 @@ async function generateWord(){
       const text = stripHtml(pk.editedText||log.progress||'');
       const nextActionText = stripHtml(log.nextAction||'');
       const hlType = pk.hlType||'';
-      const isNeg = hlType==='neg';
-      const isPos = hlType==='pos';
-      const icon = isNeg ? '★' : isPos ? '☆' : '';
-      const projectName = (icon ? icon : '') + (pk.editedName||p?.name||'');
+      const icon = hlType==='pos'?'☆ ':hlType==='neg'?'★ ':'';
+      const color = hlType==='pos'?'1a5c3a':hlType==='neg'?'8b1a1a':'333333';
 
-      // タイトル行（ネガ：太字・斜体・下線なし、ポジ：太字・下線なし、その他：通常）
+      // タイトル行
       children.push(new Paragraph({
-        spacing: { before: 160, after: 60 },
+        spacing: { before: 180, after: 60 },
         children: [
-          new TextRun({
-            text: projectName,
-            bold: isNeg || isPos,
-            italics: isNeg,
-            size: 22,
-            font: 'Yu Gothic'
-          })
+          new TextRun({ text: icon + (p?.name||''), bold: true, size: 22, color, font: 'Yu Gothic' }),
+          new TextRun({ text: '　' + (p?.cat||''), size: 18, color: '888888', font: 'Yu Gothic' })
         ]
       }));
 
@@ -30377,7 +30313,7 @@ async function generateWord(){
       // 次のアクション
       if(nextActionText){
         children.push(new Paragraph({
-          spacing: { after: 80 },
+          spacing: { after: 100 },
           children: [
             new TextRun({ text: '→ 次のアクション: ', size: 18, color: '4a7ab5', bold: true, font: 'Yu Gothic' }),
             new TextRun({ text: nextActionText, size: 18, color: '4a7ab5', font: 'Yu Gothic' })
@@ -30385,31 +30321,12 @@ async function generateWord(){
         }));
       }
 
-      // 空白行（区切り）
+      // 区切り線
       children.push(new Paragraph({
         spacing: { after: 80 },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'e8e6df', space: 1 } },
         children: [new TextRun({ text: '' })]
       }));
-
-      // 選択された画像を埋め込む
-      const pickIdx = picks_data.indexOf(pk);
-      const selectedImgs = getSelectedRpImages(pickIdx, log);
-      for(const img of selectedImgs){
-        try{
-          const base64 = img.dataUrl.split(',')[1];
-          const binary = atob(base64);
-          const bytes = new Uint8Array(binary.length);
-          for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
-          children.push(new Paragraph({
-            spacing: { after: 60 },
-            children: [new ImageRun({
-              data: bytes.buffer,
-              type: 'jpg',
-              transformation: { width: 400, height: 300 }
-            })]
-          }));
-        }catch(e){ console.warn('画像埋め込みエラー:', e); }
-      }
     }
 
     const doc = new Document({
@@ -30432,19 +30349,6 @@ async function generateWord(){
     a.click();
     URL.revokeObjectURL(url);
 
-    // Word出力後に画像選択をUIも含めてリセット
-    Object.entries(_rpSelectedImages).forEach(([pickIdx, idxList])=>{
-      idxList.forEach(imgIdx=>{
-        const chk = document.getElementById(`rp-img-chk-${pickIdx}-${imgIdx}`);
-        const box = document.getElementById(`rp-img-${pickIdx}-${imgIdx}`);
-        if(chk) chk.style.display = 'none';
-        if(box) box.style.border = '1.5px solid var(--border2)';
-      });
-      const cnt = document.getElementById(`img-sel-cnt-${pickIdx}`);
-      if(cnt) cnt.textContent = '0';
-    });
-    _rpSelectedImages = {};
-
     document.getElementById('word-result').innerHTML =
       '<div style="color:var(--pos);font-size:12px;margin-top:8px;padding:8px 12px;background:var(--pos-bg);border-radius:var(--rad)">✓ docxファイルをダウンロードしました</div>';
 
@@ -30454,14 +30358,9 @@ async function generateWord(){
     console.error(e);
   }
 
-  btn.disabled=false; btn.textContent='📝 Word生成（.docx）';
+  if(btn){ btn.disabled=false; btn.textContent='📝 Word出力（.docx）'; }
 }
 
-function downloadReport(items, week){
-  // Trigger Claude to generate the actual Word file
-  const summary = items.map(it=>`[${it.type==='pos'?'POSITIVE':'CONCERN'}] ${it.title_ja} / ${it.title_en}`).join('\n');
-  sendPrompt(`週次報告のWordファイルを生成してください。\n対象週: ${week}\n部署: スマートインフラ事業本部 Asia Business Development Dept.\n\n内容:\n${JSON.stringify(items,null,2)}`);
-}
 
 // ────────────────────────────────────────────────────────
 // ADD PROJECT
@@ -30472,7 +30371,7 @@ function openAddProject(){
   const memberChecks = MEMBERS.length
     ? MEMBERS.map(m=>`
         <label style="display:flex;align-items:center;gap:5px;font-size:11px;padding:3px 0;cursor:pointer">
-          <input type="checkbox" value="${m}" style="margin:0"> ${m}
+          <input type="checkbox" value="${esc(m)}" style="margin:0"> ${esc(m)}
         </label>`).join('')
     : '<span style="font-size:11px;color:var(--hint)">メンバーが登録されていません（マイビューから追加してください）</span>';
 
@@ -30517,7 +30416,10 @@ function addProject(){
   const free = (document.getElementById('m-owner-free')?.value||'').trim();
   const ownerParts = [...checked, ...(free ? [free] : [])];
   const owner = ownerParts.join('・');
-  const newId = Math.max(...PROJECTS.map(p=>p.id))+1;
+  // Date.now()ベースにする。max+1だと2人が同時に追加したとき同じIDになり、
+  // 後からPUTした方が先の1件を丸ごと上書きしてしまう
+  // （PROJECTSが空のときMath.max()が-Infinityを返す問題も同時に解消）
+  const newId = Date.now();
   const newProject = {
     id:newId,
     cat:document.getElementById('m-cat').value,
@@ -30556,7 +30458,23 @@ function stripHtml(html){
 }
 
 function esc(str){
-  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str==null?'':str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// onclick="fn('...')" の中に文字列を埋め込むとき用。
+// 属性値はHTMLデコードされてからJSとして解釈されるので、
+// 先にJS文字列としてエスケープし、そのあとHTMLエスケープする必要がある
+// （esc()だけでは ' が &#39; → ' に戻ってJS文字列を脱出してしまう）
+function escAttr(str){
+  return String(str==null?'':str)
+    .replace(/\\/g,'\\\\')
+    .replace(/'/g,"\\'")
+    .replace(/\r?\n/g,'\\n')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 function closeOverlay(e){
   if(!e||e.target===document.getElementById('overlay'))
@@ -30577,6 +30495,351 @@ window.addEventListener('beforeunload', function(e){
   }
 });
 
+// ════════════════════════════════════════════════════════
+// レイアウト調整（サイドバー幅／右パネル幅／エディタ全画面）
+// 幅は localStorage に保存し、次回以降も引き継ぐ
+// ════════════════════════════════════════════════════════
+const LAYOUT_KEY = 'wr_layout_v1';
+const SB_MIN = 170, SB_MAX = 400, SB_DEFAULT = 240;
+const DR_MIN = 220, DR_MAX = 720;
+
+// 画面幅に応じた右パネルの初期値（ノートPCでは自動的に狭くする）
+function drDefaultWidth(){
+  return Math.max(DR_MIN, Math.min(420, Math.round(window.innerWidth * 0.26)));
+}
+
+function loadLayoutPrefs(){
+  try{ return JSON.parse(localStorage.getItem(LAYOUT_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveLayoutPrefs(patch){
+  const cur = loadLayoutPrefs();
+  try{ localStorage.setItem(LAYOUT_KEY, JSON.stringify({...cur, ...patch})); }catch(e){}
+}
+
+function applySidebarWidth(px){
+  const w = Math.max(SB_MIN, Math.min(SB_MAX, Math.round(px)));
+  document.documentElement.style.setProperty('--sb-w', w + 'px');
+  return w;
+}
+function applyRightWidth(px){
+  const w = Math.max(DR_MIN, Math.min(DR_MAX, Math.round(px)));
+  document.documentElement.style.setProperty('--dr-w', w + 'px');
+  return w;
+}
+
+function toggleSidebar(){
+  const layout = document.querySelector('.layout');
+  if(!layout) return;
+  const collapsed = layout.classList.toggle('sb-collapsed');
+  document.body.classList.toggle('sb-is-collapsed', collapsed);
+  saveLayoutPrefs({sbCollapsed: collapsed});
+}
+
+function toggleRightPanel(){
+  const wrap = document.getElementById('detailWrap');
+  if(!wrap) return;
+  const collapsed = wrap.classList.toggle('dr-collapsed');
+  const btn = document.getElementById('btn-toggle-right');
+  if(btn) btn.textContent = collapsed ? '▨ 右パネルを出す' : '▨ 右パネルを隠す';
+  saveLayoutPrefs({drCollapsed: collapsed});
+}
+
+// ── 進捗入力の全画面編集 ──
+function toggleEditorFullscreen(){
+  const row = document.getElementById('progress-row');
+  if(!row) return;
+  const on = !row.classList.contains('editor-fs');
+  const btn = document.getElementById('btn-editor-fs');
+  if(on){
+    const bd = document.createElement('div');
+    bd.className = 'editor-fs-backdrop';
+    bd.id = 'editor-fs-backdrop';
+    bd.onclick = toggleEditorFullscreen;
+    document.body.appendChild(bd);
+    row.classList.add('editor-fs');
+    if(btn) btn.textContent = '⛶ 閉じる';
+    document.getElementById('inp-progress')?.focus();
+  } else {
+    row.classList.remove('editor-fs');
+    document.getElementById('editor-fs-backdrop')?.remove();
+    if(btn) btn.textContent = '⛶ 全画面';
+  }
+}
+
+// ── ドラッグでの幅調整 ──
+function initLayoutResizers(){
+  const prefs = loadLayoutPrefs();
+
+  applySidebarWidth(prefs.sbWidth || SB_DEFAULT);
+  applyRightWidth(prefs.drWidth || drDefaultWidth());
+
+  if(prefs.sbCollapsed){
+    document.querySelector('.layout')?.classList.add('sb-collapsed');
+    document.body.classList.add('sb-is-collapsed');
+  }
+  if(prefs.drCollapsed){
+    document.getElementById('detailWrap')?.classList.add('dr-collapsed');
+    const btn = document.getElementById('btn-toggle-right');
+    if(btn) btn.textContent = '▨ 右パネルを出す';
+  }
+
+  // 共通ドラッグ処理。calcWidth はマウス位置から幅を返す
+  function attachDrag(handle, calcWidth, applyFn, prefKey, resetVal, onStart){
+    if(!handle) return;
+    handle.addEventListener('mousedown', function(e){
+      e.preventDefault();
+      if(onStart) onStart();
+      handle.classList.add('dragging');
+      document.body.classList.add('dragging-col');
+      let latest = null;
+      const onMove = ev => { latest = applyFn(calcWidth(ev)); };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        handle.classList.remove('dragging');
+        document.body.classList.remove('dragging-col');
+        if(latest !== null) saveLayoutPrefs({[prefKey]: latest});
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+    // ダブルクリックで初期幅に戻す
+    handle.addEventListener('dblclick', function(){
+      const v = applyFn(typeof resetVal === 'function' ? resetVal() : resetVal);
+      saveLayoutPrefs({[prefKey]: v});
+    });
+  }
+
+  attachDrag(document.getElementById('sbResizer'),
+    ev => ev.clientX, applySidebarWidth, 'sbWidth', SB_DEFAULT);
+
+  attachDrag(document.getElementById('drResizer'),
+    ev => window.innerWidth - ev.clientX, applyRightWidth, 'drWidth', drDefaultWidth,
+    // 折りたたみ中にドラッグしたら自動で開く
+    ()=>{
+      const wrap = document.getElementById('detailWrap');
+      if(wrap && wrap.classList.contains('dr-collapsed')) toggleRightPanel();
+    });
+
+  // Escで全画面編集を抜ける
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    if(document.getElementById('progress-row')?.classList.contains('editor-fs')){
+      e.stopPropagation();
+      toggleEditorFullscreen();
+    }
+  }, true);
+}
+
+// ════════════════════════════════════════════════════════
+// 在室メンバー表示（プレゼンス）
+// 25秒ごとに自分の在室を書き込み、90秒更新がなければ退室扱い
+// ════════════════════════════════════════════════════════
+const FB_PRESENCE = FB_URL.replace(/\/[^\/]+$/, '') + '/presence';
+const PRESENCE_PING_MS   = 25000;   // 自分の在室を知らせる間隔
+const PRESENCE_ONLINE_MS = 90000;   // これ以内の更新なら「在室」
+const PRESENCE_STALE_MS  = 15 * 60 * 1000; // これを超えたら掃除
+let _presenceTimer = null;
+let PRESENCE = {};
+
+function presenceKey(name){
+  // Firebaseのキーに使えない文字を除去（日本語名はそのまま使える）
+  return encodeURIComponent(String(name).replace(/[.#$\[\]\/]/g, '_'));
+}
+
+function presencePing(){
+  if(!myOwner) return;
+  const xhr = new XMLHttpRequest();
+  xhr.open('PUT', `${FB_PRESENCE}/${presenceKey(myOwner)}.json`, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onerror = function(){ /* オフライン時は次回のpingで復帰 */ };
+  xhr.send(JSON.stringify({
+    name: myOwner,
+    admin: !!isAdmin,
+    ts: {'.sv': 'timestamp'}   // サーバ時刻を使い、端末の時計ズレの影響を避ける
+  }));
+}
+
+function presenceFetch(){
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', `${FB_PRESENCE}.json`, true);
+  xhr.timeout = 8000;
+  xhr.onload = function(){
+    if(xhr.status !== 200) return;
+    try{ PRESENCE = JSON.parse(xhr.responseText) || {}; }
+    catch(e){ return; }
+    renderPresence();
+    cleanStalePresence();
+  };
+  xhr.onerror = function(){};
+  xhr.ontimeout = function(){};
+  xhr.send();
+}
+
+// 15分以上放置されたエントリを削除（タブ強制終了で残った分の掃除）
+function cleanStalePresence(){
+  const now = Date.now();
+  Object.entries(PRESENCE).forEach(([key, v])=>{
+    if(!v || typeof v.ts !== 'number') return;
+    if(now - v.ts > PRESENCE_STALE_MS){
+      const d = new XMLHttpRequest();
+      d.open('DELETE', `${FB_PRESENCE}/${key}.json`, true);
+      d.send();
+      delete PRESENCE[key];
+    }
+  });
+}
+
+function presenceEntries(){
+  const now = Date.now();
+  return Object.values(PRESENCE)
+    .filter(v => v && v.name && typeof v.ts === 'number')
+    .filter(v => now - v.ts <= PRESENCE_STALE_MS)
+    .map(v => ({...v, online: (now - v.ts) <= PRESENCE_ONLINE_MS}))
+    .sort((a,b)=>{
+      if(a.online !== b.online) return a.online ? -1 : 1;
+      return b.ts - a.ts;
+    });
+}
+
+function renderPresence(){
+  const listEl = document.getElementById('presence-list');
+  const cntEl  = document.getElementById('presence-count');
+  if(!listEl) return;
+
+  let entries = presenceEntries();
+  // 自分は書き込み直後で未反映のことがあるので、必ず在室として表示する
+  if(myOwner && !entries.some(v => v.name === myOwner)){
+    entries.unshift({name: myOwner, admin: isAdmin, ts: Date.now(), online: true});
+  }
+
+  const onlineCount = entries.filter(v=>v.online).length;
+  if(cntEl) cntEl.textContent = onlineCount;
+
+  if(!entries.length){
+    listEl.innerHTML = '<div id="presence-empty">誰も入室していません</div>';
+    return;
+  }
+  listEl.innerHTML = entries.map(v=>`
+    <div class="pr-chip${v.name===myOwner?' me':''}${v.online?'':' idle'}${v.admin?' adm':''}" title="${esc(v.name)}${v.admin?'（管理者として入室中）':''} — ${esc(presenceAgo(v.ts))}">
+      <span class="pr-av">${esc(getMemberInitial(v.name))}</span>
+      <span class="pr-dot"></span>${esc(v.name)}${v.admin?'<span class="pr-adm" title="管理者として入室中">⚙️</span>':''}
+    </div>`).join('');
+
+  updateAdminInUseMsg();
+}
+
+// ログイン画面に「いま誰が管理者で入室しているか」を出す。
+// 入室はブロックしない（かつて排他ロックにしたところ、×で閉じた人のロックが残って
+// 誰も管理者になれなくなったため。表示だけなら、その詰まり方をしない）
+function updateAdminInUseMsg(){
+  const el = document.getElementById('admin-in-use-msg');
+  if(!el) return;
+  const admins = presenceEntries().filter(v=>v.online && v.admin && v.name !== myOwner);
+  if(!admins.length){ el.innerHTML = ''; return; }
+  el.innerHTML = `⚙️ <strong>${admins.map(v=>esc(v.name)).join('、')}</strong> さんが管理者として入室中です`
+    + `<div style="font-size:10px;color:var(--hint);margin-top:2px">同時に管理者になれますが、同じ案件の追加・削除は重ならないようご注意ください</div>`;
+}
+
+function presenceAgo(ts){
+  const s = Math.max(0, Math.round((Date.now() - ts)/1000));
+  if(s < 60) return '今';
+  const m = Math.round(s/60);
+  if(m < 60) return `${m}分前`;
+  const h = Math.round(m/60);
+  if(h < 24) return `${h}時間前`;
+  return `${Math.round(h/24)}日前`;
+}
+
+// 在室の書き込みは入室中だけ、読み取りは常に行う。
+// （ログイン画面でも「誰が管理者で入室中か」を最新に保つため、タイマーは止めない）
+function startPresence(){
+  const tick = function(){
+    if(myOwner) presencePing();
+    presenceFetch();
+  };
+  tick();
+  if(_presenceTimer) return;
+  _presenceTimer = setInterval(tick, PRESENCE_PING_MS);
+}
+
+function stopPresence(name){
+  const who = name || myOwner;
+  if(who){
+    const xhr = new XMLHttpRequest();
+    xhr.open('DELETE', `${FB_PRESENCE}/${presenceKey(who)}.json`, true);
+    xhr.send();
+    delete PRESENCE[presenceKey(who)];
+  }
+  renderPresence();
+}
+
+// タブを閉じるときに在室を消す（sendBeaconはDELETE不可のためoverrideを使う）
+window.addEventListener('pagehide', function(){
+  if(!myOwner) return;
+  const url = `${FB_PRESENCE}/${presenceKey(myOwner)}.json?x-http-method-override=DELETE`;
+  try{
+    if(navigator.sendBeacon) navigator.sendBeacon(url, new Blob([''], {type:'text/plain'}));
+  }catch(e){}
+});
+
+// 在室状況＋直近のアクセス履歴をモーダルで表示
+function openPresenceDetail(){
+  const entries = presenceEntries();
+  const rows = entries.length ? entries.map(v=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span class="pr-av" style="width:22px;height:22px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center">${esc(getMemberInitial(v.name))}</span>
+      <span style="font-size:12px;flex:1">${esc(v.name)}${v.admin?' <span style="font-size:9px;color:var(--muted)">(管理者)</span>':''}</span>
+      <span style="font-size:10px;color:${v.online?'var(--pos)':'var(--hint)'}">${v.online?'● 在室中':'○ 離席'} / ${esc(presenceAgo(v.ts))}</span>
+    </div>`).join('')
+    : '<div style="font-size:11px;color:var(--hint);padding:8px 0">誰も入室していません</div>';
+
+  document.getElementById('modalBody').innerHTML = `
+    <h3>入室状況</h3>
+    <div style="font-size:10px;color:var(--hint);margin-bottom:8px">25秒ごとに更新。90秒以上応答がない場合は「離席」と表示されます。</div>
+    ${rows}
+    <div style="margin-top:14px">
+      <div style="font-size:10px;font-weight:600;color:var(--hint);letter-spacing:.06em;margin-bottom:6px">最近のアクセス履歴</div>
+      <div id="presence-log-list" style="font-size:11px;color:var(--muted)">読み込み中…</div>
+    </div>
+    <div class="modal-footer"><button class="btn sm" onclick="document.getElementById('overlay').style.display='none'">閉じる</button></div>
+  `;
+  document.getElementById('overlay').style.display = 'flex';
+  loadRecentAccessLogs();
+}
+
+function loadRecentAccessLogs(){
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', `${FB_LOG}.json?orderBy="ts"&limitToLast=40`, true);
+  xhr.timeout = 8000;
+  xhr.onload = function(){
+    const el = document.getElementById('presence-log-list');
+    if(!el) return;
+    if(xhr.status !== 200){ el.textContent = '履歴を取得できませんでした'; return; }
+    let data;
+    try{ data = JSON.parse(xhr.responseText) || {}; }
+    catch(e){ el.textContent = '履歴を取得できませんでした'; return; }
+    const rows = Object.values(data)
+      .filter(v => v && ['login','admin_login','logout'].includes(v.action))
+      .sort((a,b)=>b.ts-a.ts)
+      .slice(0, 15);
+    if(!rows.length){ el.textContent = '記録がありません'; return; }
+    el.innerHTML = rows.map(v=>{
+      const name = String(v.detail||'').replace(/^name:/,'').split(' ')[0];
+      const act = v.action==='logout' ? '退室' : (v.action==='admin_login' ? '入室(管理者)' : '入室');
+      const d = new Date(v.ts);
+      const time = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `<div style="display:flex;gap:8px;padding:2px 0"><span style="color:var(--hint);width:78px;flex-shrink:0">${esc(time)}</span><span style="flex:1">${esc(name)}</span><span style="color:var(--hint)">${esc(act)}</span></div>`;
+    }).join('');
+  };
+  xhr.onerror = function(){
+    const el = document.getElementById('presence-log-list');
+    if(el) el.textContent = '履歴を取得できませんでした';
+  };
+  xhr.ontimeout = xhr.onerror;
+  xhr.send();
+}
+
 // ────────────────────────────────────────────────────────
 // BOOT（DOMContentLoaded後に実行）
 // ────────────────────────────────────────────────────────
@@ -30595,11 +30858,17 @@ document.addEventListener('DOMContentLoaded', function(){
   fbDB.get(function(err, data){
     try {
       const isFirebaseData = !err && data && data.projects && Object.keys(data.projects).length > 0;
+      // 起動時の_tsを覚えておく（覚えないと最初のポーリングで必ず全件を取り直してしまう）
+      if(isFirebaseData && data._ts != null) window._lastTs = data._ts;
       applyStoredData(isFirebaseData ? data : loadState());
       initApp(isFirebaseData);
+      if(!isFirebaseData){
+        // サーバから読めなかった場合、画面に出ているのは端末に残った古い控え。
+        // これを黙って表示すると、利用者は最新だと思って上書き入力してしまう
+        showOfflineBanner();
+      }
       fbDB.writeLog('boot', `firebase:${isFirebaseData} projects:${PROJECTS.length}`);
       startPolling();
-      cleanExpiredImages();
     } catch(e) {
       console.error('Boot error:', e);
       try { showToast('読み込みエラー: ' + e.message); } catch(_){}
@@ -30613,16 +30882,19 @@ document.addEventListener('DOMContentLoaded', function(){
 // バックグラウンドポーリング（30秒ごとにFirebaseを確認）
 // ────────────────────────────────────────────────────────
 let _pollingTimer = null;
-function startPolling(){
-  if(_pollingTimer) return;
-  _pollingTimer = setInterval(function(){
-    if(!myOwner) return;
-    if(document.getElementById('overlay')?.style.display === 'flex') return;
-    fbDB.get(function(err, data){
-      if(err || !data) return;
-      const remoteTs = data._ts||'';
-      if(remoteTs === (window._lastTs||'')) return; // _tsが同じならスキップ
-      window._lastTs = remoteTs;
+
+// 全件GETは数百KBある。まず数十バイトの_tsだけ見て、変化したときだけ本体を取りに行く
+function pollOnce(){
+  if(!myOwner) return;
+  if(document.hidden) return;   // 裏に回っているタブでは通信しない（無料枠の節約）
+  if(document.getElementById('overlay')?.style.display === 'flex') return;
+  fbDB.getPath('_ts', function(err, ts){
+    if(err) return;
+    // _tsは数値で保存・文字列で保持されることがあるため、必ず文字列に揃えて比較する
+    if(String(ts==null?'':ts) === String(window._lastTs==null?'':window._lastTs)) return;
+    fbDB.get(function(err2, data){
+      if(err2 || !data) return;
+      window._lastTs = data._ts==null ? ts : data._ts;
       // projectsは上書きしない（自分の操作が消えるのを防ぐ）
       // logsとhighlightsのみ他メンバーの更新を反映
       if(data.logs) LOGS = data.logs;
@@ -30632,10 +30904,30 @@ function startPolling(){
       updateReportBadge();
       showToast('データを更新しました');
     });
-  }, 30000);
+  });
+}
+
+function startPolling(){
+  if(_pollingTimer) return;
+  _pollingTimer = setInterval(pollOnce, 30000);
+  // 裏に回っている間はポーリングを止めるので、戻ってきたら1回だけ追いつく
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) pollOnce();
+  });
 }
 
 // ログイン状態はlocalStorage/sessionStorageで管理（退出ボタン押下時のみクリア）
+
+// サーバから読み込めなかったときの警告バー
+function showOfflineBanner(){
+  if(document.getElementById('_offline-banner')) return;
+  const b = document.createElement('div');
+  b.id = '_offline-banner';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9994;background:var(--neg-bg);color:var(--neg);border-bottom:1px solid var(--neg-border);font-size:11px;padding:6px 14px;text-align:center';
+  b.innerHTML = '⚠ サーバに接続できませんでした。<strong>この画面は端末に残っていた古いデータです。</strong>入力しても他のメンバーには反映されません。 '
+    + '<button style="font-size:10px;margin-left:8px;padding:2px 8px;border:1px solid var(--neg-border);background:#fff;color:var(--neg);border-radius:4px;cursor:pointer" onclick="location.reload()">再読み込み</button>';
+  document.body.appendChild(b);
+}
 
 function showToast(msg){
   let t = document.getElementById('_toast');
@@ -30658,13 +30950,14 @@ function initApp(isFirebaseData){
   applyDeptName();
   loadMembers();
   try{ myOwner = sessionStorage.getItem('wr_myowner')||''; }catch(e){}
-  if(!isFirebaseData && PROJECTS.length > 0){
-    saveState();
-  }
+  // サーバから読めなかった時に saveState() で書き戻すと、古い控えでサーバを
+  // 上書きしてしまうため何もしない（読めなかった時は書かない）
   if(!MEMBERS.length){
     MEMBERS = ['角岡','玉木','蔦澤','池田','佐々木','木下','増渕','額賀'];
     saveMembers();
   }
+  // レイアウト（サイドバー幅・右パネル幅）の復元とドラッグ操作の有効化
+  initLayoutResizers();
   // localStorageにログイン情報が残っていればログイン画面をスキップ
   if(myOwner && MEMBERS.includes(myOwner)){
     // localStorage復元：ログイン画面スキップ
@@ -30674,6 +30967,8 @@ function initApp(isFirebaseData){
     document.getElementById('login-screen').style.display = 'flex';
     initLoginScreen();
   }
+  // ログイン前でも「今誰が入室中か／誰が管理者か」は見えるようにする
+  startPresence();
 }
 </script>
 
