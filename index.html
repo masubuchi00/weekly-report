@@ -30317,14 +30317,14 @@ function rpCard(pk, idx){
             <div class="rp-img${on?' on':''}" onclick="togglePickImage(${idx},${ii})" title="${esc(im.name||'')}">
               <img src="${im.dataUrl}"><span class="rp-img-chk">${on?'✓':''}</span>
             </div>
-            ${on ? `<select class="rp-img-size" onchange="setPickImageSize(${idx},${ii},this.value)" title="Wordに載せるときの大きさ">
-              ${IMG_SIZES.map(s=>`<option value="${s.key}"${s.key===key?' selected':''}>${s.label} ${s.cm}cm</option>`).join('')}
+            ${on ? `<select class="rp-img-size" onchange="setPickImageSize(${idx},${ii},this.value)" title="Wordに載せるときの大きさ（長辺）">
+              ${IMG_SIZES.map(s=>`<option value="${s.key}"${s.key===key?' selected':''}>${s.label}（長辺${s.cm}cm）</option>`).join('')}
             </select>
             <span class="rp-img-dim">${realCm.w}×${realCm.h}cm</span>` : ''}
           </div>`;
         }).join('')}
       </div>
-      <div style="font-size:9.5px;color:var(--hint);margin-top:2px">※本文の幅は約17cmです。縦長の画像は高さ${IMG_MAX_HEIGHT_CM}cmで頭打ちになります</div>` : ''}
+      <div style="font-size:9.5px;color:var(--hint);margin-top:2px">※サイズは<strong>長辺</strong>の長さです。縦長の写真なら高さ、横長なら幅がその値になります（本文幅は約17cm）</div>` : ''}
   </div>`;
 }
 
@@ -30546,12 +30546,15 @@ async function generateWord(){
     a.click();
     URL.revokeObjectURL(url);
 
-    document.getElementById('word-result').innerHTML =
+    const _wr = document.getElementById('word-result'); if(_wr) _wr.innerHTML =
       '<div style="color:var(--pos);font-size:12px;margin-top:8px;padding:8px 12px;background:var(--pos-bg);border-radius:var(--rad)">✓ docxファイルをダウンロードしました</div>';
 
   } catch(e) {
-    document.getElementById('word-result').innerHTML =
-      `<div style="color:var(--neg);font-size:11px;margin-top:8px">エラー: ${e.message}</div>`;
+    const _wr = document.getElementById('word-result');
+    if(_wr) _wr.innerHTML =
+      `<div style="color:var(--neg);font-size:11px;margin-top:8px">エラー: ${esc(e.message)}</div>`;
+    // 表示先が無いときに無言で終わらないよう、必ずトーストでも知らせる
+    try{ showToast('⚠ Word出力に失敗しました: ' + e.message); }catch(_){}
     console.error(e);
   }
 
@@ -30896,38 +30899,41 @@ function dataUrlToUint8(dataUrl){
   return arr;
 }
 
-// Wordに載せる画像サイズの選択肢（幅cm）
-// 本文の幅はA4・余白2cmで約17cm。実物の週報は12.2cmと14.5cmだった
+// Wordに載せる画像サイズの選択肢。
+// 「長辺の長さ」で指定する。当初は幅で指定していたが、縦長写真では
+// 高さの上限に先に当たってどのサイズを選んでも同じ結果になり、選択が無意味だった。
+// 長辺基準なら縦長・横長どちらでも選択がそのまま効く。
 const IMG_SIZES = [
-  { key:'ss', label:'極小', cm:6 },
-  { key:'s',  label:'小',   cm:8 },
-  { key:'m',  label:'中',   cm:11 },
-  { key:'l',  label:'大',   cm:14 },
-  { key:'ll', label:'最大', cm:16.5 }
+  { key:'ss', label:'極小', cm:5 },
+  { key:'s',  label:'小',   cm:7 },
+  { key:'m',  label:'中',   cm:10 },
+  { key:'l',  label:'大',   cm:13 },
+  { key:'ll', label:'特大', cm:16 }
 ];
-const IMG_SIZE_DEFAULT = 's';       // 既定は「小」（大きすぎるとの指摘を受けて変更）
-const IMG_MAX_HEIGHT_CM = 10;       // 縦長画像が1ページを占有しないよう高さも制限する
+const IMG_SIZE_DEFAULT = 'm';        // 既定は「中」（長辺10cm）
+// はみ出し防止の保険。A4・余白2cmで本文幅約17cm、本文高さ約24cm。
+// 通常は選択値の方が小さいので、これが効くのは端の設定のときだけ
+const IMG_LIMIT_W_CM = 16.5;
+const IMG_LIMIT_H_CM = 20;
 
+const IMS_BY_KEY = IMG_SIZES.reduce((a,s)=>(a[s.key]=s,a),{});
 function imgCmOf(pk, imgIdx){
   const key = (pk && pk.imgSize && pk.imgSize[imgIdx]) || IMG_SIZE_DEFAULT;
   return (IMS_BY_KEY[key] || IMS_BY_KEY[IMG_SIZE_DEFAULT]).cm;
 }
-const IMS_BY_KEY = IMG_SIZES.reduce((a,s)=>(a[s.key]=s,a),{});
 
-// 画像を指定幅（cm）に収めたときのピクセル寸法を返す（docxのtransformationは96DPI基準）
-// 幅だけで決めると縦長画像が極端に高くなるため、高さにも上限をかける
-function imageDisplaySize(img, widthCm){
+// 長辺を longSideCm にしたときのピクセル寸法を返す（docxのtransformationは96DPI基準）
+function imageDisplaySize(img, longSideCm){
   const px = cm => Math.round(cm / 2.54 * 96);
   const w = img.w || 0, h = img.h || 0;
-  if(!w || !h) return { w: px(widthCm), h: px(widthCm * 0.55) };
-  let outW = px(widthCm);
-  let outH = Math.round(outW * (h / w));
-  const maxH = px(IMG_MAX_HEIGHT_CM);
-  if(outH > maxH){                     // 高さが上限を超えたら縦基準で縮める
-    outH = maxH;
-    outW = Math.round(outH * (w / h));
-  }
-  return { w: outW, h: outH };
+  if(!w || !h) return { w: px(longSideCm), h: px(longSideCm * 0.7) };
+  let outW, outH;
+  if(w >= h){ outW = longSideCm;              outH = longSideCm * (h/w); }   // 横長・正方形
+  else      { outH = longSideCm;              outW = longSideCm * (w/h); }   // 縦長
+  // ページからはみ出さないよう最後に丸める
+  const shrink = Math.min(1, IMG_LIMIT_W_CM/outW, IMG_LIMIT_H_CM/outH);
+  outW *= shrink; outH *= shrink;
+  return { w: px(outW), h: px(outH) };
 }
 
 function stripHtml(html){
