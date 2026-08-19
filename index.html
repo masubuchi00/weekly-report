@@ -181,6 +181,10 @@ body.dragging-col{cursor:col-resize;user-select:none}
 .rp-img.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light)}
 .rp-img .rp-img-chk{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:3px;background:rgba(255,255,255,.9);border:1px solid var(--border2);display:grid;place-items:center;font-size:11px;color:var(--accent);line-height:1}
 .rp-img.on .rp-img-chk{background:var(--accent);color:#fff;border-color:var(--accent)}
+.rp-img-wrap{display:flex;flex-direction:column;gap:2px;width:86px}
+.rp-img-size{font-size:9.5px;padding:1px 2px;border:1px solid var(--border2);border-radius:3px;background:var(--surface);color:var(--text);font-family:inherit;width:100%}
+.rp-img-size:focus{outline:none;border-color:var(--accent-mid)}
+.rp-img-dim{font-size:8.5px;color:var(--hint);text-align:center;line-height:1.2}
 .rp-title-input{width:100%;font-size:12px;font-weight:600;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);font-family:inherit}
 .rp-title-input:focus{outline:none;border-color:var(--accent-mid)}
 .rp-editor{min-height:140px;font-size:12.5px;background:var(--surface)}
@@ -30301,16 +30305,39 @@ function rpCard(pk, idx){
     <div class="rich-editor rp-editor" id="rp-ed-${idx}" contenteditable="true"
       oninput="updatePickText(${idx}, this.innerHTML)">${pk.editedText || log.progress || ''}</div>
     ${(log.images||[]).length ? `
-      <div style="font-size:10px;color:var(--muted);margin-top:8px">添付画像（Wordに載せるものを選択）:</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">添付画像（載せるものを選び、Wordでの大きさを指定）:</div>
       <div class="rp-imgs">
         ${log.images.map((im,ii)=>{
           const on = (pk.imageIdx||[]).includes(ii);
-          return `<div class="rp-img${on?' on':''}" onclick="togglePickImage(${idx},${ii})" title="${esc(im.name||'')}">
-            <img src="${im.dataUrl}"><span class="rp-img-chk">${on?'✓':''}</span>
+          const cm = imgCmOf(pk, ii);
+          const key = (pk.imgSize && pk.imgSize[ii]) || IMG_SIZE_DEFAULT;
+          const dim = imageDisplaySize(im, cm);
+          const realCm = { w:(dim.w/96*2.54).toFixed(1), h:(dim.h/96*2.54).toFixed(1) };
+          return `<div class="rp-img-wrap">
+            <div class="rp-img${on?' on':''}" onclick="togglePickImage(${idx},${ii})" title="${esc(im.name||'')}">
+              <img src="${im.dataUrl}"><span class="rp-img-chk">${on?'✓':''}</span>
+            </div>
+            ${on ? `<select class="rp-img-size" onchange="setPickImageSize(${idx},${ii},this.value)" title="Wordに載せるときの大きさ">
+              ${IMG_SIZES.map(s=>`<option value="${s.key}"${s.key===key?' selected':''}>${s.label} ${s.cm}cm</option>`).join('')}
+            </select>
+            <span class="rp-img-dim">${realCm.w}×${realCm.h}cm</span>` : ''}
           </div>`;
         }).join('')}
-      </div>` : ''}
+      </div>
+      <div style="font-size:9.5px;color:var(--hint);margin-top:2px">※本文の幅は約17cmです。縦長の画像は高さ${IMG_MAX_HEIGHT_CM}cmで頭打ちになります</div>` : ''}
   </div>`;
+}
+
+// Wordに載せるときの画像サイズ
+function setPickImageSize(idx, imgIdx, key){
+  const picks = REPORT_PICKS[currentWeek]||[];
+  const pk = picks[idx];
+  if(!pk) return;
+  if(!pk.imgSize) pk.imgSize = {};
+  pk.imgSize[imgIdx] = key;
+  saveReportPicks(currentWeek);
+  saveState();
+  renderReport();
 }
 
 // Report編集欄の書式ボタン
@@ -30441,7 +30468,7 @@ async function generateWord(){
     const FONT   = { ascii: 'Arial', eastAsia: 'MS PGothic', hAnsi: 'Arial' };
     const SZ_HEAD = 22;   // half-point = 11pt
     const SZ_BODY = 21;   // half-point = 10.5pt
-    const IMG_WIDTH_CM = 12.2;   // 実物の実測値（W33）。W32は14.5cm
+    // 画像の大きさはReport画面で1枚ずつ指定する（imgCmOf / IMG_SIZES 参照）
 
     // 部署見出し（太字＋下線）
     children.push(new Paragraph({
@@ -30480,12 +30507,13 @@ async function generateWord(){
         children.push(para);
       }
 
-      // 添付画像。Report画面でチェックしたものだけ載せる
+      // 添付画像。Report画面でチェックしたものだけ、指定サイズで載せる
       const allImgs = Array.isArray(log.images) ? log.images : [];
-      const chosen = Array.isArray(pk.imageIdx) ? pk.imageIdx.map(i=>allImgs[i]).filter(Boolean) : [];
-      for(const img of chosen){
+      const chosenIdx = Array.isArray(pk.imageIdx) ? pk.imageIdx.filter(i=>allImgs[i]) : [];
+      for(const ii of chosenIdx){
+        const img = allImgs[ii];
         try{
-          const dim = imageDisplaySize(img, IMG_WIDTH_CM);
+          const dim = imageDisplaySize(img, imgCmOf(pk, ii));
           children.push(new Paragraph({
             spacing: { before: 60, after: 60 },
             children: [new ImageRun({
@@ -30868,12 +30896,38 @@ function dataUrlToUint8(dataUrl){
   return arr;
 }
 
+// Wordに載せる画像サイズの選択肢（幅cm）
+// 本文の幅はA4・余白2cmで約17cm。実物の週報は12.2cmと14.5cmだった
+const IMG_SIZES = [
+  { key:'ss', label:'極小', cm:6 },
+  { key:'s',  label:'小',   cm:8 },
+  { key:'m',  label:'中',   cm:11 },
+  { key:'l',  label:'大',   cm:14 },
+  { key:'ll', label:'最大', cm:16.5 }
+];
+const IMG_SIZE_DEFAULT = 's';       // 既定は「小」（大きすぎるとの指摘を受けて変更）
+const IMG_MAX_HEIGHT_CM = 10;       // 縦長画像が1ページを占有しないよう高さも制限する
+
+function imgCmOf(pk, imgIdx){
+  const key = (pk && pk.imgSize && pk.imgSize[imgIdx]) || IMG_SIZE_DEFAULT;
+  return (IMS_BY_KEY[key] || IMS_BY_KEY[IMG_SIZE_DEFAULT]).cm;
+}
+const IMS_BY_KEY = IMG_SIZES.reduce((a,s)=>(a[s.key]=s,a),{});
+
 // 画像を指定幅（cm）に収めたときのピクセル寸法を返す（docxのtransformationは96DPI基準）
+// 幅だけで決めると縦長画像が極端に高くなるため、高さにも上限をかける
 function imageDisplaySize(img, widthCm){
-  const targetPx = Math.round(widthCm / 2.54 * 96);
+  const px = cm => Math.round(cm / 2.54 * 96);
   const w = img.w || 0, h = img.h || 0;
-  if(!w || !h) return { w: targetPx, h: Math.round(targetPx * 0.55) };
-  return { w: targetPx, h: Math.round(targetPx * (h / w)) };
+  if(!w || !h) return { w: px(widthCm), h: px(widthCm * 0.55) };
+  let outW = px(widthCm);
+  let outH = Math.round(outW * (h / w));
+  const maxH = px(IMG_MAX_HEIGHT_CM);
+  if(outH > maxH){                     // 高さが上限を超えたら縦基準で縮める
+    outH = maxH;
+    outW = Math.round(outH * (w / h));
+  }
+  return { w: outW, h: outH };
 }
 
 function stripHtml(html){
