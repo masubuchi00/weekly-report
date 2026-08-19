@@ -29,8 +29,11 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;backgroun
 #sbResizer{position:fixed;top:0;left:calc(var(--sb-w,240px) - 3px);width:6px;height:100vh;cursor:col-resize;z-index:60;background:transparent;transition:background .12s}
 #sbResizer:hover,#sbResizer.dragging{background:var(--accent-mid)}
 body.sb-is-collapsed #sbResizer{display:none}
-#sbRestoreBtn{position:fixed;top:8px;left:8px;z-index:61;display:none;font-size:11px;padding:4px 9px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);border-radius:var(--rad);cursor:pointer;font-family:inherit;box-shadow:var(--shadow)}
+/* z-indexは通信エラー時の警告バー(9994)より上にする。下だとバーに隠れて押せない */
+#sbRestoreBtn{position:fixed;top:8px;left:8px;z-index:9996;display:none;font-size:11px;padding:4px 9px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);border-radius:var(--rad);cursor:pointer;font-family:inherit;box-shadow:var(--shadow)}
 body.sb-is-collapsed #sbRestoreBtn{display:block}
+/* 上部に警告バーが出ているときは、その下へずらす（重なって押せなくなるのを防ぐ） */
+body.has-top-banner #sbRestoreBtn{top:40px}
 /* 画面が狭いときはサイドバー既定幅を圧縮 */
 @media (max-width:1400px){:root{--sb-w:200px}}
 .sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--border)}
@@ -153,6 +156,27 @@ body.dragging-col{cursor:col-resize;user-select:none}
 .hl-btn.pos{background:var(--pos-bg);color:var(--pos);border-color:var(--pos-border)}
 .hl-btn.neg{background:var(--neg-bg);color:var(--neg);border-color:var(--neg-border)}
 .hl-btn.pos.on,.hl-btn.neg.on{opacity:1;font-weight:600}
+/* 画像添付 */
+.img-drop{border:1px dashed var(--border2);border-radius:var(--rad);background:var(--bg);padding:12px;text-align:center;font-size:11px;color:var(--muted);cursor:pointer;transition:.12s;display:flex;flex-direction:column;gap:2px}
+.img-drop:hover,.img-drop.over{border-color:var(--accent-mid);background:var(--accent-light);color:var(--accent)}
+.img-drop span{font-size:9.5px;color:var(--hint)}
+.img-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.img-thumb{position:relative;width:104px;border:1px solid var(--border2);border-radius:var(--rad);overflow:hidden;background:var(--surface)}
+.img-thumb img{width:100%;height:70px;object-fit:cover;display:block;cursor:zoom-in}
+.img-thumb .img-meta{display:block;font-size:8.5px;color:var(--hint);padding:2px 4px;text-align:center;line-height:1.3}
+.img-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:12px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+.img-del:hover{background:var(--neg)}
+/* Report画面の画像選択 */
+.rp-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rp-img{position:relative;width:86px;border:2px solid var(--border2);border-radius:var(--rad);overflow:hidden;cursor:pointer;background:var(--surface)}
+.rp-img img{width:100%;height:56px;object-fit:cover;display:block}
+.rp-img.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light)}
+.rp-img .rp-img-chk{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:3px;background:rgba(255,255,255,.9);border:1px solid var(--border2);display:grid;place-items:center;font-size:11px;color:var(--accent);line-height:1}
+.rp-img.on .rp-img-chk{background:var(--accent);color:#fff;border-color:var(--accent)}
+.rp-title-input{width:100%;font-size:12px;font-weight:600;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);font-family:inherit}
+.rp-title-input:focus{outline:none;border-color:var(--accent-mid)}
+.rp-editor{min-height:140px;font-size:12.5px;background:var(--surface)}
+.rp-editor:focus{background:var(--surface)}
 /* History */
 .history-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad2);padding:16px 18px;box-shadow:var(--shadow)}
 .history-section h3{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px}
@@ -273,7 +297,7 @@ body{padding-top:32px}
 #login-screen{top:32px}
 #_offline-banner{top:32px}</style>
 </head>
-<body>
+<body class="has-top-banner">
 <div id="verify-banner">⚠ ここは<strong>動作確認用</strong>のサイトです。ここでの入力は週報に反映されません。<a href="https://abd-masu.github.io/weekly-report-sub/">→ 本番サイトを開く</a></div>
 
 <!-- ===== LOGIN SCREEN ===== -->
@@ -29289,7 +29313,7 @@ function doLogin(admin){
   isAdmin = admin;
   if(admin){
     // 管理者はsessionStorage（タブを閉じたら自動解放）
-    try{ sessionStorage.setItem('wr_myowner', myOwner); }catch(e){}
+    try{ sessionStorage.setItem('wr_myowner', myOwner); sessionStorage.setItem('wr_isadmin','1'); }catch(e){}
     // Firebaseにセッション登録（タイムアウトなし）
     const session = {name: loginSelected};
     const xhr = new XMLHttpRequest();
@@ -29299,7 +29323,7 @@ function doLogin(admin){
     fbDB.writeLog('admin_login', `name:${loginSelected}`);
   } else {
     // 一般メンバーもsessionStorage
-    try{ sessionStorage.setItem('wr_myowner', myOwner); }catch(e){}
+    try{ sessionStorage.setItem('wr_myowner', myOwner); sessionStorage.removeItem('wr_isadmin'); }catch(e){}
     fbDB.writeLog('login', `name:${loginSelected}`);
   }
   document.getElementById('login-screen').style.display = 'none';
@@ -29652,6 +29676,8 @@ function renderDetail(){
 
 function renderDetailLeft(p){
   const log = getLog(p.id, currentWeek)||{progress:'',nextAction:'',hlType:''};
+  // 保存済みの画像を編集用に読み込む（保存するまでLOGSは書き換えない）
+  _currentImages = Array.isArray(log.images) ? log.images.slice() : [];
   const hls = HIGHLIGHTS[currentWeek]||[];
   const hl = hls.find(h=>h.projectId===p.id);
   const hlType = hl?.type||log.hlType||'';
@@ -29748,6 +29774,20 @@ function renderDetailLeft(p){
         <label>次のアクション</label>
         <textarea id="inp-next" placeholder="来週やること・フォローアップ項目…" style="min-height:52px" oninput="enableSaveBtn()">${esc(log.nextAction)}</textarea>
       </div>
+      <div class="input-row">
+        <label>添付画像 <span id="img-count" style="color:var(--hint);font-weight:400"></span></label>
+        <div class="img-drop" id="img-drop"
+             onclick="document.getElementById('img-file').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="event.preventDefault();this.classList.remove('over');handleImageFiles(event.dataTransfer.files,${p.id})">
+          📎 画像をドラッグ＆ドロップ、またはクリックして選択
+          <span>最大${IMG_MAX}枚・長辺${IMG_MAX_SIDE}pxに自動縮小・${IMG_KEEP_DAYS}日で自動削除</span>
+        </div>
+        <input type="file" id="img-file" accept="image/*" multiple style="display:none"
+               onchange="handleImageFiles(this.files,${p.id});this.value=''">
+        <div class="img-thumbs" id="img-thumbs"></div>
+      </div>
       <div class="input-actions">
         <button class="btn sm primary" id="save-btn" onclick="saveLog(${p.id})" disabled style="opacity:0.4;cursor:not-allowed">保存</button>
         <div class="hl-toggle">
@@ -29794,6 +29834,8 @@ function renderDetailLeft(p){
       }
     </div>
   `;
+  // innerHTML を差し替えた後にサムネイルを描く
+  renderImgThumbs(p.id);
 }
 
 function renderDetailRight(p){
@@ -29952,7 +29994,8 @@ function saveLog(pid){
   const existing = getLog(pid, currentWeek);
   const hlType = existing?.hlType||'';
   const charsBefore = (existing?.progress||'').length;
-  LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType};
+  const images = _currentImages.slice();
+  LOGS[logKey(pid, currentWeek)] = {progress, nextAction, hlType, images};
 
   // 保存中はボタンを止める
   const btn = document.getElementById('save-btn');
@@ -29965,7 +30008,7 @@ function saveLog(pid){
 
   // Firebaseの応答を待ってから結果を表示する（送っただけで「保存しました」と出すと、
   // 失敗しても成功に見えてしまい、タブを閉じた時点で進捗が消える）
-  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType}, function(err){
+  fbDB.put(`logs/${logKey(pid, currentWeek)}`, {progress, nextAction, hlType, images}, function(err){
     // renderDetail()でボタンが作り直されているため、IDで取り直す
     const b = document.getElementById('save-btn');
     if(err){
@@ -30152,11 +30195,14 @@ function rpCard(pk, idx){
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-right:180px">
         <span style="font-size:10px;color:${hlColor}">${hlLabel}</span>
-        <strong style="font-size:12px">${esc(p?.name||"—")}</strong>
-        <span style="font-size:10px;color:var(--muted)">${esc(p?.cat||"")}</span>
+        <strong style="font-size:12px">${esc(pk.title || p?.name || "—")}</strong>
       </div>
-      <div style="font-size:11px;color:var(--text);background:var(--bg);padding:8px 10px;border-radius:var(--rad);white-space:pre-wrap;line-height:1.65;border:1px solid var(--border)">${esc(stripHtml(pk.editedText||log.progress||''))}</div>
-      ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:6px">→ 次のアクション: ${esc(stripHtml(log.nextAction))}</div>`:''}
+      <div style="font-size:11.5px;color:var(--text);background:var(--bg);padding:8px 10px;border-radius:var(--rad);line-height:1.7;border:1px solid var(--border)">${pk.editedText || log.progress || ''}</div>
+      ${(()=>{
+        const all = Array.isArray(log.images)?log.images:[];
+        const sel = Array.isArray(pk.imageIdx)?pk.imageIdx.map(i=>all[i]).filter(Boolean):[];
+        return sel.length ? `<div class="rp-imgs">${sel.map(im=>`<div class="rp-img on"><img src="${im.dataUrl}"></div>`).join('')}</div>` : '';
+      })()}
     </div>`;
   }
 
@@ -30174,13 +30220,77 @@ function rpCard(pk, idx){
       <button class="btn sm" style="margin-left:auto;color:var(--neg);font-size:10px;padding:2px 8px"
         onclick="removePick(${idx})">削除</button>
     </div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:4px">元の進捗（参照用）:</div>
-    <div style="font-size:11px;color:var(--muted);background:var(--bg);padding:6px 8px;border-radius:var(--rad);margin-bottom:8px;white-space:pre-wrap;max-height:80px;overflow-y:auto">${stripHtml((log.progress||'').substring(0,200))}${(log.progress||'').length>200?'…':''}</div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Weekly Report掲載テキスト（自由編集）:</div>
-    <textarea style="width:100%;font-size:11px;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;min-height:80px;line-height:1.6"
-      oninput="updatePickText(${idx},this.value)">${esc(stripHtml(pk.editedText||log.progress||''))}</textarea>
-    ${log.nextAction?`<div style="font-size:10px;color:var(--muted);margin-top:4px">→ 次のアクション: ${esc(stripHtml(log.nextAction))}</div>`:''}
+    <div style="font-size:10px;color:var(--muted);margin-bottom:4px">見出し（Wordの☆★行に出ます）:</div>
+    <input class="rp-title-input" value="${esc(pk.title || p?.name || '')}"
+      placeholder="例：CoordyNavi販売状況（インド）：今週ライセンス発行+30件"
+      oninput="updatePickTitle(${idx},this.value)">
+    <div style="font-size:10px;color:var(--muted);margin:8px 0 4px">元の進捗（参照用）:</div>
+    <div style="font-size:11px;color:var(--muted);background:var(--bg);padding:6px 8px;border-radius:var(--rad);margin-bottom:8px;white-space:pre-wrap;max-height:80px;overflow-y:auto">${esc(stripHtml((log.progress||'')).substring(0,200))}${stripHtml(log.progress||'').length>200?'…':''}</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Weekly Report掲載テキスト（書式はそのままWordに出ます）:</div>
+    <div class="rich-toolbar">
+      <button class="rtb" title="太字" onclick="rpFmt(${idx},'bold')"><b>B</b></button>
+      <button class="rtb" title="斜体" onclick="rpFmt(${idx},'italic')"><i>I</i></button>
+      <button class="rtb" title="下線" onclick="rpFmt(${idx},'underline')"><u>U</u></button>
+      <div class="rtb-sep"></div>
+      <button class="rtb" title="文字色：赤" onclick="rpFmt(${idx},'foreColor','#d32f2f')" style="color:#d32f2f;font-weight:700">A</button>
+      <button class="rtb" title="文字色：青" onclick="rpFmt(${idx},'foreColor','#1565c0')" style="color:#1565c0;font-weight:700">A</button>
+      <button class="rtb" title="文字色：緑" onclick="rpFmt(${idx},'foreColor','#2e7d32')" style="color:#2e7d32;font-weight:700">A</button>
+      <button class="rtb" title="文字色をリセット" onclick="rpFmt(${idx},'foreColor','#000000')" style="font-size:10px">A↺</button>
+      <div class="rtb-sep"></div>
+      <button class="rtb" title="蛍光ペン黄" onclick="rpFmt(${idx},'hiliteColor','#fff176')" style="background:#fff176;border-color:#e6d600">H</button>
+      <button class="rtb" title="蛍光ペン緑" onclick="rpFmt(${idx},'hiliteColor','#c8f7c5')" style="background:#c8f7c5;border-color:#4caf50">H</button>
+      <button class="rtb" title="蛍光ペン解除" onclick="rpFmt(${idx},'hiliteColor','transparent')" style="font-size:10px">H↺</button>
+      <div class="rtb-sep"></div>
+      <button class="rtb" title="小" onclick="rpFmt(${idx},'fontSize','2')" style="font-size:9px">小</button>
+      <button class="rtb" title="標準" onclick="rpFmt(${idx},'fontSize','3')" style="font-size:11px">中</button>
+      <button class="rtb" title="大" onclick="rpFmt(${idx},'fontSize','4')" style="font-size:13px">大</button>
+    </div>
+    <div class="rich-editor rp-editor" id="rp-ed-${idx}" contenteditable="true"
+      oninput="updatePickText(${idx}, this.innerHTML)">${pk.editedText || log.progress || ''}</div>
+    ${(log.images||[]).length ? `
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">添付画像（Wordに載せるものを選択）:</div>
+      <div class="rp-imgs">
+        ${log.images.map((im,ii)=>{
+          const on = (pk.imageIdx||[]).includes(ii);
+          return `<div class="rp-img${on?' on':''}" onclick="togglePickImage(${idx},${ii})" title="${esc(im.name||'')}">
+            <img src="${im.dataUrl}"><span class="rp-img-chk">${on?'✓':''}</span>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
   </div>`;
+}
+
+// Report編集欄の書式ボタン
+function rpFmt(idx, cmd, val){
+  const ed = document.getElementById('rp-ed-'+idx);
+  if(!ed) return;
+  ed.focus();
+  document.execCommand(cmd, false, val||null);
+  updatePickText(idx, ed.innerHTML);
+}
+
+// Wordの☆★行に出す見出し
+function updatePickTitle(idx, val){
+  const picks = REPORT_PICKS[currentWeek]||[];
+  if(picks[idx]){
+    picks[idx].title = val;
+    saveReportPicks(currentWeek);
+    saveState();
+  }
+}
+
+// Wordに載せる画像の選択
+function togglePickImage(idx, imgIdx){
+  const picks = REPORT_PICKS[currentWeek]||[];
+  const pk = picks[idx];
+  if(!pk) return;
+  if(!Array.isArray(pk.imageIdx)) pk.imageIdx = [];
+  const at = pk.imageIdx.indexOf(imgIdx);
+  if(at >= 0) pk.imageIdx.splice(at,1); else pk.imageIdx.push(imgIdx);
+  pk.imageIdx.sort((a,b)=>a-b);
+  saveReportPicks(currentWeek);
+  saveState();
+  renderReport();
 }
 
 function confirmAllPicks(){
@@ -30258,75 +30368,81 @@ async function generateWord(){
   if(btn){ btn.disabled=true; btn.textContent='⏳ 生成中…'; }
 
   try {
-    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, HeadingLevel } = window.docx || docx;
-    const week = weekLabel(currentWeek);
+    const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, BorderStyle, HeadingLevel } = window.docx || docx;
     const picks_data = REPORT_PICKS[currentWeek]||[];
 
     const children = [];
 
-    // ヘッダー
+    // ════════════════════════════════════════════════════════
+    // 本部提出版（SIB Weekly report）の〈SA事〉セクションと同じ体裁で出力する。
+    // 2026-08 の実物（W32・W33）から採寸した書式：
+    //   ・部署見出し   : 太字＋下線、11pt（文書既定サイズ）
+    //   ・Concerns…    : 下線のみ（太字なし）、11pt
+    //   ・☆★見出し行  : 太字、10.5pt
+    //   ・本文         : 通常、10.5pt
+    //   ・フォント     : Arial（英数）＋ MS PGothic（日本語）
+    //   ・画像         : 本文直後に1段落、幅12〜14.5cm
+    //   ・週ラベル／カテゴリ／次のアクション／区切り線は実物に存在しないため出力しない
+    // 貼り付け後の手直しを不要にするのが目的なので、勝手な装飾を足さないこと。
+    // ════════════════════════════════════════════════════════
+    const FONT   = { ascii: 'Arial', eastAsia: 'MS PGothic', hAnsi: 'Arial' };
+    const SZ_HEAD = 22;   // half-point = 11pt
+    const SZ_BODY = 21;   // half-point = 10.5pt
+    const IMG_WIDTH_CM = 12.2;   // 実物の実測値（W33）。W32は14.5cm
+
+    // 部署見出し（太字＋下線）
     children.push(new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 60 },
-      children: [new TextRun({ text: week, size: 18, color: '888888', font: 'Arial' })]
+      children: [new TextRun({
+        text: 'Asia Business Development Dept. 〈SA事〉',
+        bold: true, underline: {}, size: SZ_HEAD, font: FONT
+      })]
     }));
+    // Concerns & Positives（下線のみ）
     children.push(new Paragraph({
-      spacing: { after: 40 },
-      border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: '1e3a5f', space: 4 } },
-      children: [
-        new TextRun({ text: 'スマートインフラ事業本部　Asia Business Development Dept.', bold: true, size: 22, font: 'Yu Gothic' })
-      ]
-    }));
-    children.push(new Paragraph({
-      spacing: { before: 200, after: 120 },
-      children: [new TextRun({ text: 'Topics of this week', bold: true, size: 24, color: '1e3a5f', font: 'Arial' })]
+      children: [new TextRun({
+        text: 'Concerns & Positives',
+        underline: {}, size: SZ_HEAD, font: FONT
+      })]
     }));
 
     // 各案件
     for(const pk of picks_data){
       const p = PROJECTS.find(x=>x.id===pk.projectId);
       const log = getLog(pk.projectId, currentWeek)||{};
-      const text = stripHtml(pk.editedText||log.progress||'');
-      const nextActionText = stripHtml(log.nextAction||'');
       const hlType = pk.hlType||'';
-      const icon = hlType==='pos'?'☆ ':hlType==='neg'?'★ ':'';
-      const color = hlType==='pos'?'1a5c3a':hlType==='neg'?'8b1a1a':'333333';
+      const icon = hlType==='pos'?'☆':hlType==='neg'?'★':'';
 
-      // タイトル行
+      // 見出し行（太字）。実物は色を付けていないので黒のまま
       children.push(new Paragraph({
-        spacing: { before: 180, after: 60 },
-        children: [
-          new TextRun({ text: icon + (p?.name||''), bold: true, size: 22, color, font: 'Yu Gothic' }),
-          new TextRun({ text: '　' + (p?.cat||''), size: 18, color: '888888', font: 'Yu Gothic' })
-        ]
+        spacing: { before: 120 },
+        children: [new TextRun({
+          text: icon + (pk.title || p?.name || ''),
+          bold: true, size: SZ_BODY, font: FONT
+        })]
       }));
 
-      // 本文（改行対応）
-      const lines = text.split(/\n/);
-      for(const line of lines){
-        children.push(new Paragraph({
-          spacing: { after: 30 },
-          children: [new TextRun({ text: line, size: 20, font: 'Yu Gothic' })]
-        }));
+      // 本文。空行は1つの空段落として残す（実物も段落で分かれている）
+      const bodyHtml = pk.editedText || log.progress || '';
+      for(const para of htmlToParagraphs(bodyHtml, SZ_BODY, FONT)){
+        children.push(para);
       }
 
-      // 次のアクション
-      if(nextActionText){
-        children.push(new Paragraph({
-          spacing: { after: 100 },
-          children: [
-            new TextRun({ text: '→ 次のアクション: ', size: 18, color: '4a7ab5', bold: true, font: 'Yu Gothic' }),
-            new TextRun({ text: nextActionText, size: 18, color: '4a7ab5', font: 'Yu Gothic' })
-          ]
-        }));
+      // 添付画像。Report画面でチェックしたものだけ載せる
+      const allImgs = Array.isArray(log.images) ? log.images : [];
+      const chosen = Array.isArray(pk.imageIdx) ? pk.imageIdx.map(i=>allImgs[i]).filter(Boolean) : [];
+      for(const img of chosen){
+        try{
+          const dim = imageDisplaySize(img, IMG_WIDTH_CM);
+          children.push(new Paragraph({
+            spacing: { before: 60, after: 60 },
+            children: [new ImageRun({
+              data: dataUrlToUint8(img.dataUrl),
+              type: (img.dataUrl.match(/^data:image\/(\w+)/)||[,'jpg'])[1].replace('jpeg','jpg'),
+              transformation: { width: dim.w, height: dim.h }
+            })]
+          }));
+        }catch(e){ console.warn('画像の埋め込みに失敗:', e); }
       }
-
-      // 区切り線
-      children.push(new Paragraph({
-        spacing: { after: 80 },
-        border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'e8e6df', space: 1 } },
-        children: [new TextRun({ text: '' })]
-      }));
     }
 
     const doc = new Document({
@@ -30441,6 +30557,272 @@ function addProject(){
 // ────────────────────────────────────────────────────────
 // UTILS
 // ────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+// 画像の添付
+//
+// 圧縮設定は、実際に本部提出版の週報に載っている画像の実測値に合わせている。
+//   2026-08 W32: 1006x534px / 33KB / 表示14.5cm / 実効176DPI
+//   2026-08 W33:  855x454px / 68KB / 表示12.2cm / 実効178DPI
+// 長辺1200px・200KBあれば実物より余裕があり、5枚でも1MBに収まる。
+// （旧設定の長辺1600px・1MBは過剰で、DBを圧迫していた）
+// ════════════════════════════════════════════════════════
+const IMG_MAX        = 5;
+const IMG_MAX_SIDE   = 1200;              // 長辺の上限（px）
+const IMG_TARGET_BYTES = 200 * 1024;      // 1枚あたりの目標サイズ
+const IMG_KEEP_DAYS  = 90;                // 保存期間（日）
+
+let _currentImages = [];   // 編集中の画像（保存するまでLOGSには入れない）
+
+// 画像を縮小・圧縮して data:URL を返す
+function compressImage(file, callback){
+  const reader = new FileReader();
+  reader.onerror = ()=> callback(null, '画像を読み込めませんでした');
+  reader.onload = e=>{
+    const img = new Image();
+    img.onerror = ()=> callback(null, '画像の形式を判別できませんでした');
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      if(w > IMG_MAX_SIDE || h > IMG_MAX_SIDE){
+        const r = Math.min(IMG_MAX_SIDE/w, IMG_MAX_SIDE/h);
+        w = Math.round(w*r); h = Math.round(h*r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);   // 透過PNG対策（黒背景になるのを防ぐ）
+      ctx.drawImage(img, 0, 0, w, h);
+      let quality = 0.85;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      while(dataUrl.length * 0.75 > IMG_TARGET_BYTES && quality > 0.35){
+        quality -= 0.1;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+      callback({ dataUrl, w, h, name: file.name, expireTs: Date.now() + IMG_KEEP_DAYS*24*60*60*1000 }, null);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImageFiles(files, pid){
+  const list = Array.from(files||[]).filter(f=>/^image\//.test(f.type));
+  if(!list.length) return;
+  let remaining = list.length;
+  for(const f of list){
+    if(_currentImages.length >= IMG_MAX){
+      showToast(`画像は最大${IMG_MAX}枚までです`);
+      break;
+    }
+    compressImage(f, (img, err)=>{
+      if(err){ showToast('⚠ ' + err); }
+      else {
+        _currentImages.push(img);
+        enableSaveBtn();   // 画像を足したら未保存扱いにする
+      }
+      if(--remaining <= 0) renderImgThumbs(pid);
+      else renderImgThumbs(pid);
+    });
+  }
+}
+
+function renderImgThumbs(pid){
+  const box = document.getElementById('img-thumbs');
+  if(!box) return;
+  const cnt = document.getElementById('img-count');
+  if(cnt) cnt.textContent = _currentImages.length ? `${_currentImages.length} / ${IMG_MAX} 枚` : '';
+  box.innerHTML = _currentImages.map((im,i)=>{
+    const kb = Math.round(im.dataUrl.length*0.75/1024);
+    const days = Math.max(0, Math.round((im.expireTs - Date.now())/86400000));
+    return `<div class="img-thumb" title="${esc(im.name||'')} / ${im.w}×${im.h}px / ${kb}KB">
+      <img src="${im.dataUrl}" onclick="openImgPreview(${i})">
+      <button class="img-del" title="削除" onclick="removeImage(${i}, ${pid})">×</button>
+      <span class="img-meta">${kb}KB・あと${days}日</span>
+    </div>`;
+  }).join('');
+}
+
+function removeImage(idx, pid){
+  _currentImages.splice(idx,1);
+  enableSaveBtn();
+  renderImgThumbs(pid);
+}
+
+function openImgPreview(idx){
+  const im = _currentImages[idx];
+  if(!im) return;
+  let m = document.getElementById('_img_modal');
+  if(!m){
+    m = document.createElement('div');
+    m.id = '_img_modal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:10001;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+    m.onclick = ()=>m.remove();
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<img src="${im.dataUrl}" style="max-width:92vw;max-height:88vh;object-fit:contain;border-radius:var(--rad)">`;
+}
+
+// 保存期間を過ぎた画像を落とす（起動時に1回）
+function cleanExpiredImages(){
+  const now = Date.now();
+  const changed = [];
+  Object.entries(LOGS).forEach(([key, log])=>{
+    if(!log || !log.images || !log.images.length) return;
+    const kept = log.images.filter(im => !im.expireTs || im.expireTs > now);
+    if(kept.length !== log.images.length){
+      log.images = kept;
+      changed.push(key);
+    }
+  });
+  // サーバにも反映する（手元だけ消しても次の取得で戻ってくるため）
+  changed.forEach(key=>{
+    fbDB.put(`logs/${key}`, LOGS[key], function(err){
+      if(err) console.warn('期限切れ画像の削除に失敗:', key);
+    });
+  });
+  if(changed.length) console.info(`期限切れ画像を${changed.length}件のログから削除しました`);
+}
+
+// ════════════════════════════════════════════════════════
+// リッチテキスト（contenteditableのHTML）→ Wordの段落・文字列へ変換
+//
+// 編集欄で付けた太字・斜体・下線・文字色・サイズを、Word側にも反映させる。
+// ここが無いと「画面では色が付くのにWordに出ない」状態になり、
+// 書式機能が無いより混乱するため、編集欄のリッチ化とは必ずセットで扱うこと。
+// ════════════════════════════════════════════════════════
+
+// 画面上のフォントサイズ指定（execCommandのfontSize 1〜7）をWordのhalf-pointへ
+const FONTSIZE_MAP = { '1':16, '2':18, '3':21, '4':24, '5':28, '6':36, '7':48 };
+
+// 蛍光ペンの色コード → docxのhighlight名（docx.jsは色名しか受け付けない）
+const HILITE_MAP = {
+  '#fff176':'yellow', '#ffff00':'yellow',
+  '#c8f7c5':'green',  '#00ff00':'green',
+  '#c5e8f7':'cyan',   '#00ffff':'cyan'
+};
+
+function normalizeColor(v){
+  if(!v) return null;
+  v = String(v).trim().toLowerCase();
+  let m = v.match(/^#([0-9a-f]{6})$/);
+  if(m) return m[1];
+  m = v.match(/^#([0-9a-f]{3})$/);
+  if(m) return m[1].split('').map(c=>c+c).join('');
+  m = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if(m) return [1,2,3].map(i=>parseInt(m[i],10).toString(16).padStart(2,'0')).join('');
+  return null;
+}
+
+// HTML文字列を、docxのParagraph配列へ変換する
+function htmlToParagraphs(html, defaultSize, font){
+  const { Paragraph, TextRun } = window.docx || docx;
+  if(!html) return [];
+
+  // 生HTMLをDOMとして読み込む（属性の解釈をブラウザに任せる）
+  const root = document.createElement('div');
+  root.innerHTML = html;
+
+  const paragraphs = [];
+  let runs = [];
+
+  const flush = ()=>{
+    // 空段落も1つの段落として残す（実物の週報も段落で区切られている）
+    paragraphs.push(new Paragraph({
+      spacing: { after: 0 },
+      children: runs.length ? runs : [new TextRun({ text:'', size:defaultSize, font })]
+    }));
+    runs = [];
+  };
+
+  // 現在の書式を引き継ぎながら木を辿る
+  const walk = (node, style)=>{
+    for(const child of Array.from(node.childNodes)){
+      if(child.nodeType === 3){                    // テキスト
+        const t = child.nodeValue.replace(/ /g,' ');
+        if(t === '') continue;
+        runs.push(new TextRun({
+          text: t,
+          size: style.size || defaultSize,
+          font,
+          bold: !!style.bold,
+          italics: !!style.italic,
+          underline: style.underline ? {} : undefined,
+          color: style.color || undefined,
+          highlight: style.highlight || undefined
+        }));
+        continue;
+      }
+      if(child.nodeType !== 1) continue;
+      const tag = child.tagName.toLowerCase();
+
+      if(tag === 'br'){ flush(); continue; }
+
+      // div / p は段落の区切り
+      if(tag === 'div' || tag === 'p'){
+        if(runs.length) flush();
+        walk(child, style);
+        flush();
+        continue;
+      }
+
+      // この要素で加わる書式を計算する
+      const s = Object.assign({}, style);
+      if(tag==='b' || tag==='strong') s.bold = true;
+      if(tag==='i' || tag==='em')     s.italic = true;
+      if(tag==='u')                   s.underline = true;
+      if(tag==='font'){
+        const c = normalizeColor(child.getAttribute('color'));
+        if(c) s.color = c;
+        const fs = child.getAttribute('size');
+        if(fs && FONTSIZE_MAP[fs]) s.size = FONTSIZE_MAP[fs];
+      }
+      const st = child.style || {};
+      if(st.fontWeight && (st.fontWeight==='bold' || parseInt(st.fontWeight,10)>=600)) s.bold = true;
+      if(st.fontStyle === 'italic') s.italic = true;
+      if(st.textDecorationLine ? /underline/.test(st.textDecorationLine) : /underline/.test(st.textDecoration||'')) s.underline = true;
+      const col = normalizeColor(st.color);
+      if(col) s.color = col;
+      const bg = normalizeColor(st.backgroundColor);
+      if(bg){
+        const hl = HILITE_MAP['#'+bg];
+        if(hl) s.highlight = hl;
+      }
+      // 進捗入力欄の蛍光ペンはクラスで付く
+      if(child.classList){
+        if(child.classList.contains('hl-yellow')) s.highlight = 'yellow';
+        if(child.classList.contains('hl-green'))  s.highlight = 'green';
+        if(child.classList.contains('hl-blue'))   s.highlight = 'cyan';
+      }
+      walk(child, s);
+    }
+  };
+
+  walk(root, {});
+  if(runs.length) flush();
+  return paragraphs;
+}
+
+// 段落へ分ける前に、末尾の余分な空行を落とすためのテキスト判定用
+function htmlHasText(html){
+  return stripHtml(html||'').trim().length > 0;
+}
+
+// data:URL を docx が扱えるバイト列へ
+function dataUrlToUint8(dataUrl){
+  const b64 = String(dataUrl).replace(/^data:[^;]+;base64,/, '');
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+// 画像を指定幅（cm）に収めたときのピクセル寸法を返す（docxのtransformationは96DPI基準）
+function imageDisplaySize(img, widthCm){
+  const targetPx = Math.round(widthCm / 2.54 * 96);
+  const w = img.w || 0, h = img.h || 0;
+  if(!w || !h) return { w: targetPx, h: Math.round(targetPx * 0.55) };
+  return { w: targetPx, h: Math.round(targetPx * (h / w)) };
+}
+
 function stripHtml(html){
   if(!html) return '';
   return html
@@ -30486,11 +30868,14 @@ function closeOverlay(e){
 // ────────────────────────────────────────────────────────
 // ブラウザを閉じる時の処理
 window.addEventListener('beforeunload', function(e){
-  if(isAdmin){
-    releaseAdminSession();
-    // 確認ダイアログを表示（管理者の場合のみ）
+  // 未保存の入力があるときだけ引き止める。
+  // 以前は管理者で入室していると更新のたびに確認ダイアログが出ていたが、
+  // 文面の「管理者セッションが解除されます」は実態と違っていた
+  // （排他ロックを外した結果、admin_session は誰も読んでいない）。
+  // 更新しても管理者状態は維持されるため、この警告は不要。
+  if(hasUnsavedInput()){
     e.preventDefault();
-    e.returnValue = '管理者セッションが解除されます。退室しますか？';
+    e.returnValue = '保存していない入力があります。このまま移動すると失われます。';
     return e.returnValue;
   }
 });
@@ -30867,6 +31252,7 @@ document.addEventListener('DOMContentLoaded', function(){
         // これを黙って表示すると、利用者は最新だと思って上書き入力してしまう
         showOfflineBanner();
       }
+      cleanExpiredImages();   // 保存期間を過ぎた添付画像を落とす
       fbDB.writeLog('boot', `firebase:${isFirebaseData} projects:${PROJECTS.length}`);
       startPolling();
     } catch(e) {
@@ -30927,6 +31313,7 @@ function showOfflineBanner(){
   b.innerHTML = '⚠ サーバに接続できませんでした。<strong>この画面は端末に残っていた古いデータです。</strong>入力しても他のメンバーには反映されません。 '
     + '<button style="font-size:10px;margin-left:8px;padding:2px 8px;border:1px solid var(--neg-border);background:#fff;color:var(--neg);border-radius:4px;cursor:pointer" onclick="location.reload()">再読み込み</button>';
   document.body.appendChild(b);
+  document.body.classList.add('has-top-banner');  // ▶メニューをバーの下へずらす
 }
 
 function showToast(msg){
@@ -30958,9 +31345,14 @@ function initApp(isFirebaseData){
   }
   // レイアウト（サイドバー幅・右パネル幅）の復元とドラッグ操作の有効化
   initLayoutResizers();
-  // localStorageにログイン情報が残っていればログイン画面をスキップ
+  // sessionStorageにログイン情報が残っていればログイン画面をスキップ
   if(myOwner && MEMBERS.includes(myOwner)){
-    // localStorage復元：ログイン画面スキップ
+    // ログイン画面はHTML側で display:flex になっているため、明示的に隠す必要がある
+    // （この1行が無かったため、再読み込みすると必ずログイン画面に戻っていた）
+    document.getElementById('login-screen').style.display = 'none';
+    // 管理者状態も同じタブ内なら維持する。sessionStorageはタブを閉じると消えるため、
+    // 「×で閉じたら管理者が解ける」という従来の安全性はそのまま保たれる
+    try{ isAdmin = sessionStorage.getItem('wr_isadmin') === '1'; }catch(e){ isAdmin = false; }
     updateUserBadge();
     applyAdminUI();
   } else {
