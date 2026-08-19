@@ -149,7 +149,15 @@ body.dragging-col{cursor:col-resize;user-select:none}
 .editor-fs-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:9995}
 .rtb-fs{margin-left:auto}
 .input-row textarea:focus{outline:none;border-color:var(--accent-mid);background:var(--surface)}
-.input-actions{display:flex;gap:6px;align-items:center}
+.input-actions{display:flex;gap:8px;align-items:center}
+/* 保存はこの画面で一番大事な操作なので、他のボタンよりはっきり大きくする */
+#save-btn{font-size:13px;font-weight:600;padding:9px 26px;border-radius:var(--rad);letter-spacing:.04em;box-shadow:0 1px 3px rgba(30,58,95,.25)}
+#save-btn:not(:disabled):hover{opacity:1;background:#2a4f7d}
+#save-btn:disabled{box-shadow:none}
+/* 未保存のあいだは淡く光らせて、押し忘れに気づけるようにする */
+@keyframes save-pulse{0%,100%{box-shadow:0 1px 3px rgba(30,58,95,.25)}50%{box-shadow:0 0 0 4px rgba(74,122,181,.28)}}
+#save-btn:not(:disabled){animation:save-pulse 1.8s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){#save-btn:not(:disabled){animation:none}}
 .hl-toggle{display:flex;gap:4px;margin-left:auto}
 .hl-btn{font-size:10px;padding:3px 8px;border-radius:10px;border:1px solid;cursor:pointer;font-family:inherit;transition:.1s;opacity:.55}
 .hl-btn:hover{opacity:.8}
@@ -29789,7 +29797,7 @@ function renderDetailLeft(p){
         <div class="img-thumbs" id="img-thumbs"></div>
       </div>
       <div class="input-actions">
-        <button class="btn sm primary" id="save-btn" onclick="saveLog(${p.id})" disabled style="opacity:0.4;cursor:not-allowed">保存</button>
+        <button class="btn primary" id="save-btn" onclick="saveLog(${p.id})" disabled style="opacity:0.4;cursor:not-allowed">💾 保存</button>
         <div class="hl-toggle">
           <button class="hl-btn pos${hlType==='pos'?' on':''}" id="hl-pos-btn" onclick="toggleHL(${p.id},'pos')">☆ ポジ</button>
           <button class="hl-btn neg${hlType==='neg'?' on':''}" id="hl-neg-btn" onclick="toggleHL(${p.id},'neg')">★ ネガ</button>
@@ -29985,6 +29993,35 @@ function logEditStart(pid, week){
   fbDB.writeLog('edit_start', `pid:${pid} week:${week}`);
 }
 
+// 入力欄に今表示されている内容（本文・次のアクション・画像）を読み取る。
+// 画面が開いていない、または別の案件を表示中なら null を返す
+function readEditorState(pid){
+  if(currentProjectId !== pid) return null;
+  const progressEl = document.getElementById('inp-progress');
+  const nextEl = document.getElementById('inp-next');
+  if(!progressEl || !nextEl) return null;
+  const raw = progressEl.value !== undefined ? progressEl.value.trim() : progressEl.innerHTML.trim();
+  return {
+    progress: stripHtml(raw).trim() ? raw : '',
+    nextAction: nextEl.value.trim(),
+    images: _currentImages.slice()
+  };
+}
+
+// ☆ポジ／★ネガ や「+Reportに追加」を押したときに、
+// 保存前の入力（書式付き本文・添付画像）を巻き込んで保存する。
+//
+// これらの操作は最後に renderDetail() で画面を作り直すため、
+// 保存していない内容は捨てられていた。画像を貼った直後にポジを押すと
+// 画像が消えるのはこのため。押した時点の内容をそのまま残す。
+function commitEditorBeforeAction(pid){
+  const st = readEditorState(pid);
+  if(!st) return;
+  const key = logKey(pid, currentWeek);
+  const cur = getLog(pid, currentWeek) || {};
+  LOGS[key] = { ...cur, progress: st.progress, nextAction: st.nextAction, images: st.images };
+}
+
 function saveLog(pid){
   const progressEl = document.getElementById('inp-progress');
   const rawProgress = progressEl ? (progressEl.value !== undefined ? progressEl.value.trim() : progressEl.innerHTML.trim()) : '';
@@ -30025,7 +30062,7 @@ function saveLog(pid){
       b.textContent = '✓ 保存しました';
       setTimeout(()=>{
         const b2 = document.getElementById('save-btn');
-        if(b2 && b2.textContent === '✓ 保存しました') b2.textContent = '保存';
+        if(b2 && b2.textContent === '✓ 保存しました') b2.textContent = '💾 保存';
       }, 2000);
     }
   });
@@ -30037,6 +30074,7 @@ function saveLog(pid){
 
 
 function toggleReportPick(pid){
+  commitEditorBeforeAction(pid);   // 保存前の本文・画像を巻き込む
   if(!REPORT_PICKS[currentWeek]) REPORT_PICKS[currentWeek]=[];
   const picks = REPORT_PICKS[currentWeek];
   const idx = picks.findIndex(r=>r.projectId===pid);
@@ -30044,14 +30082,29 @@ function toggleReportPick(pid){
     picks.splice(idx,1);
   } else {
     const log = getLog(pid, currentWeek)||{};
-    picks.push({projectId:pid, editedText: log.progress||'', hlType: (HIGHLIGHTS[currentWeek]||[]).find(h=>h.projectId===pid)?.type||''});
+    const p = PROJECTS.find(x=>x.id===pid);
+    picks.push({
+      projectId: pid,
+      title: p?.name || '',
+      // 書式付きのHTMLをそのまま渡す（stripHtmlしない）。ここで書式を捨てると
+      // Report画面でも太字や色が消え、Wordにも出なくなる
+      editedText: log.progress || '',
+      hlType: (HIGHLIGHTS[currentWeek]||[]).find(h=>h.projectId===pid)?.type||'',
+      // 添付画像は既定で全部Wordに載せる（要らないものは画面で外せる）
+      imageIdx: (log.images||[]).map((_,i)=>i)
+    });
   }
+  // 本文と画像を巻き込んだので、ログ本体もサーバへ反映する
+  fbDB.put(`logs/${logKey(pid,currentWeek)}`, LOGS[logKey(pid,currentWeek)]||{}, function(err){
+    if(err) showToast('⚠ 保存に失敗しました。通信を確認してください');
+  });
   saveReportPicks(currentWeek);
   saveState();
   updateReportBadge();
   renderDetail();
 }
 function toggleHL(pid, type){
+  commitEditorBeforeAction(pid);   // 保存前の本文・画像を巻き込む
   const hls = HIGHLIGHTS[currentWeek]||(HIGHLIGHTS[currentWeek]=[]);
   const idx = hls.findIndex(h=>h.projectId===pid);
   const log = getLog(pid, currentWeek)||{};
