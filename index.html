@@ -255,8 +255,16 @@ body.dragging-col{cursor:col-resize;user-select:none}
 .tag.neg{background:var(--neg-bg);color:var(--neg)}
 /* Empty */
 .empty{text-align:center;padding:32px;color:var(--hint);font-size:11px}
+/* 並び替え（ドラッグ&ドロップ） */
+.pl-item{position:relative}
+.pl-item.has-grip{padding-left:26px}
+.pl-grip{position:absolute;left:5px;top:50%;transform:translateY(-50%);width:14px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--hint);font-size:11px;letter-spacing:-2px;line-height:1;cursor:grab;border-radius:3px;user-select:none}
+.pl-grip:hover{background:var(--border);color:var(--text)}
 .pl-item[draggable="true"]{cursor:grab}
 .pl-item[draggable="true"]:active{cursor:grabbing}
+.pl-item.pl-dragging{opacity:.35}
+.pl-item.pl-drop-before{box-shadow:inset 0 3px 0 0 var(--accent)}
+.pl-item.pl-drop-after{box-shadow:inset 0 -3px 0 0 var(--accent)}
 /* Gen box */
 .gen-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rad2);padding:14px;margin-top:14px}
 .gen-box h4{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px}
@@ -403,6 +411,7 @@ body{padding-top:32px}
   </div>
   <div class="sb-footer">
     <button class="btn admin-only" style="width:100%;font-size:10px;display:none" onclick="openAddProject()">＋ プロジェクト追加</button>
+    <button class="btn admin-only" style="width:100%;font-size:10px;display:none;margin-top:4px" title="手動で並べ替えた順番を捨てて、カテゴリ順（カテゴリ→ID順）に戻します" onclick="resortByCategory()">↕ カテゴリ順に並べ直す</button>
   </div>
 </div>
 
@@ -994,7 +1003,7 @@ body{padding-top:32px}
   <!-- DETAIL VIEW -->
   <div id="view-detail" style="display: none;">
     <div class="topbar">
-      <button class="btn ghost" onclick="showList()">← 一覧</button>
+      <button class="btn ghost" id="btn-detail-back" onclick="goBackFromDetail()">← 一覧</button>
       <span class="topbar-title" id="detail-topbar-title"></span>
       <button class="btn sm admin-only" id="btn-toggle-status" onclick="toggleProjectStatus()" style="display:none"></button>
       <button class="btn sm admin-only" style="color:var(--neg);border-color:var(--neg-border);display:none" onclick="deleteProject()">🗑 削除</button>
@@ -29202,7 +29211,7 @@ function buildSidebar(){
   const activeCount = PROJECTS.filter(p=>p.status!=='closed').length;
   document.getElementById('cnt-active').textContent = activeCount;
   const lbl = document.getElementById('list-count-label');
-  if(lbl) lbl.textContent = '進行中 ' + activeCount + '件';
+  if(lbl) lbl.textContent = '進行中 ' + activeCount + '件　／　⋮⋮ ドラッグで並び替え';
   const archiveEl = document.getElementById('cnt-archive');
   if(archiveEl) archiveEl.textContent = PROJECTS.filter(p=>p.status==='closed').length;
   buildOwnerSelect();
@@ -29430,19 +29439,18 @@ function renderMyView(){
     if(p.status==='closed') return false;
     return p.owner.split(/[・、\/]/).map(o=>o.replace(/[（）()]/g,'').trim()).includes(myOwner);
   });
-  const CAT_ORDER = CATEGORIES;
-  mine.sort((a,b)=>{
-    const ca = CAT_ORDER.indexOf(a.cat), cb = CAT_ORDER.indexOf(b.cat);
-    return ca !== cb ? ca-cb : a.id-b.id;
-  });
+  // 一覧と同じ並び（手動順）。カテゴリでは分けない
+  invalidateFallbackOrd();
+  mine.sort((a,b) => (projOrd(a) - projOrd(b)) || (a.id - b.id));
   const uninput = mine.filter(p=>!getLog(p.id,currentWeek)?.progress).length;
   el.innerHTML =
     `<div style="background:${uninput>0?'var(--warn-bg)':'var(--pos-bg)'};border:1px solid var(--border);border-radius:var(--rad2);padding:8px 14px;margin-bottom:10px;font-size:11px;color:${uninput>0?'var(--warn)':'var(--pos)'}">
       ${uninput>0?`⚠️ 今週（${weekLabel(currentWeek)}）未入力: <strong>${uninput}件</strong>`:`✅ 今週（${weekLabel(currentWeek)}）すべて入力済みです`}
     </div>` +
     (mine.length
-      ? `<div class="project-list">${mine.map(p=>renderProjectCard(p)).join('')}</div>`
+      ? `<div class="project-list">${mine.map(p=>renderProjectCard(p,'myview')).join('')}</div>`
       : '<div class="empty">担当案件がありません</div>');
+  initListDnD('myviewList');
 }
 
 // マイビューの「👥 メンバー編集」。
@@ -29519,6 +29527,327 @@ function buildWeekSelect(){
   sel.value = currentWeek;
 }
 
+// ════════════════════════════════════════════════════════
+// プロジェクトの並び順（手動・ドラッグ&ドロップ）
+// ════════════════════════════════════════════════════════
+// 並び順は projects/{id}.ord（数値）に持たせ、全員で共通のものを見る。
+// ordが未設定の案件は id を代用するので、一度も並び替えていない状態では
+// 従来どおり Excel 由来のID順で並ぶ（既存データの移行作業は不要）。
+//
+// ⚠ 保存するのは「動かした1件の ord だけ」。手元のPROJECTS全体を書き戻すと
+//    他の人が同時に編集した内容を消すため（共通CLAUDE.md §3-2）。
+//    ordが全く無いカテゴリを初めて並び替えるときだけ、そのカテゴリ分の
+//    ordフィールドを1000刻みでまとめてPATCHする（他の項目には触らない）。
+
+let _dragPid = null;         // ドラッグ中の案件ID
+let _dragOverPid = null;     // 落とす先の案件ID
+let _dragOverAfter = false;  // true=落とす先の直後 / false=直前
+
+// 終了案件は別の数値帯に置く。進行中と ord が混ざらないようにするため
+const CLOSED_ORD_BASE = 1000000;
+
+function isClosedP(p){ return p.status === 'closed'; }
+
+// ordが無い案件の代用値。「従来の並び（カテゴリ順→ID順）での順位」を返す。
+// これにより一度も並び替えていない状態では今までと同じ見た目になり、移行作業が要らない。
+// 実ordを振るときも同じ値を使うので、一部だけordが付いた状態でも並びが破綻しない
+let _fallbackOrd = null;
+function invalidateFallbackOrd(){ _fallbackOrd = null; }
+function fallbackOrdMap(){
+  if(_fallbackOrd) return _fallbackOrd;
+  const CAT = CATEGORIES;
+  const m = {};
+  [false, true].forEach(closed=>{
+    const base = closed ? CLOSED_ORD_BASE : 0;
+    PROJECTS
+      .filter(p => isClosedP(p) === closed)
+      .sort((a,b)=>{
+        const ca = CAT.indexOf(a.cat), cb = CAT.indexOf(b.cat);
+        if(ca !== cb) return ca - cb;
+        return a.id - b.id;
+      })
+      .forEach((p,i)=>{ m[p.id] = base + (i+1) * 1000; });
+  });
+  _fallbackOrd = m;
+  return m;
+}
+
+// ord の方式マーカー。この版が書いた ord には必ず ordV:2 が付く。
+// ordV が無い ord は旧方式（カテゴリごとに1000刻み）の残骸なので無視して上書きする。
+// magnitudeで見分ける方式にすると、先頭へ動かし続けたときに値が下がって誤判定するため、
+// 明示的なマーカーにしている
+const ORD_V = 2;
+function hasOrd(p){
+  return p.ordV === ORD_V && typeof p.ord === 'number' && isFinite(p.ord);
+}
+
+function projOrd(p){
+  if(hasOrd(p)) return p.ord;
+  const v = fallbackOrdMap()[p.id];
+  return (typeof v === 'number') ? v : Number.MAX_SAFE_INTEGER;
+}
+
+// 並び替えの対象グループ。進行中と終了の2つだけに分かれる。
+// この枠だけは越えられない。状態の変更は「プロジェクトクローズ」「進行中に戻す」の仕事で、
+// ドラッグで状態が変わると事故になるため分けている。カテゴリでは分けない
+function orderSiblings(closed){
+  return PROJECTS
+    .filter(p => isClosedP(p) === closed)
+    .sort((a,b) => (projOrd(a) - projOrd(b)) || (a.id - b.id));
+}
+
+// 指定グループの先頭に入る ord を返す
+function ordForTop(closed){
+  const sib = orderSiblings(closed);
+  const base = closed ? CLOSED_ORD_BASE : 0;
+  return sib.length ? (projOrd(sib[0]) - 1000) : (base + 1000);
+}
+
+// 新規追加時の ord。一覧の先頭に入る値を返す。
+// IDがDate.now()ベースなので、ordを持たせないと必ず最後尾に付いて見つけられなくなる
+function ordForNewProject(){
+  return ordForTop(false);
+}
+
+// 有効な ord を持たない案件にだけ、現在の表示位置に相当する値を入れる。
+// 既に新方式の ord を持っている案件には触らない（他の人が並べた順番を消さないため）
+function ensureOrd(closed, done){
+  const m = fallbackOrdMap();
+  const payload = {};
+  PROJECTS.filter(p => isClosedP(p) === closed).forEach(p=>{
+    if(hasOrd(p)) return;
+    const v = m[p.id];
+    if(typeof v !== 'number') return;
+    p.ord = v;
+    p.ordV = ORD_V;
+    payload[p.id + '/ord'] = v;
+    payload[p.id + '/ordV'] = ORD_V;
+  });
+  if(!Object.keys(payload).length){ done(null); return; }
+  fbDB.patch('projects', payload, done);
+}
+
+// 指定グループの ord を、今の並びのまま1000刻みへ振り直す（中間値の刻みが尽きたとき用）
+function renumberOrd(closed, done){
+  const sib = orderSiblings(closed);
+  const base = closed ? CLOSED_ORD_BASE : 0;
+  const payload = {};
+  sib.forEach((p,i)=>{
+    const v = base + (i+1) * 1000;
+    p.ord = v;
+    p.ordV = ORD_V;
+    payload[p.id + '/ord'] = v;
+    payload[p.id + '/ordV'] = ORD_V;
+  });
+  if(!Object.keys(payload).length){ done(null); return; }
+  fbDB.patch('projects', payload, done);
+}
+
+// 手動順を捨てて、カテゴリ順（カテゴリ→ID順）へ戻す。管理者のみ。
+// ドラッグは全員できるが、これは全員の並びを一度に捨てる操作なので管理者に限定している
+function resortByCategory(){
+  if(!isAdmin){ showToast('管理者モードで入室してください'); return; }
+  if(!confirm('一覧の並びをカテゴリ順に戻します。\n手動で並べ替えた順番は失われます。実行しますか？')) return;
+  invalidateFallbackOrd();
+  const m = fallbackOrdMap();   // カテゴリ順→ID順 の順位そのもの
+  const backup = {};
+  const payload = {};
+  PROJECTS.forEach(p=>{
+    const v = m[p.id];
+    if(typeof v !== 'number') return;
+    backup[p.id] = {ord:p.ord, ordV:p.ordV};
+    p.ord = v;
+    p.ordV = ORD_V;
+    payload[p.id + '/ord'] = v;
+    payload[p.id + '/ordV'] = ORD_V;
+  });
+  if(!Object.keys(payload).length) return;
+  rerenderActiveList();
+  fbDB.patch('projects', payload, function(e){
+    if(e){
+      PROJECTS.forEach(p=>{
+        if(!(p.id in backup)) return;
+        const b = backup[p.id];
+        if(b.ord === undefined) delete p.ord; else p.ord = b.ord;
+        if(b.ordV === undefined) delete p.ordV; else p.ordV = b.ordV;
+      });
+      invalidateFallbackOrd();
+      rerenderActiveList();
+      alert('並べ直しを保存できませんでした。元の並びに戻します。');
+      return;
+    }
+    showToast('カテゴリ順に並べ直しました');
+  });
+}
+
+function rerenderActiveList(){
+  const mv = document.getElementById('view-myview');
+  if(mv && mv.style.display === 'block') renderMyView();
+  else renderList();
+}
+
+function moveProject(pid, targetPid, after){
+  const p = PROJECTS.find(x=>x.id === pid);
+  const t = PROJECTS.find(x=>x.id === targetPid);
+  if(!p || !t || p.id === t.id) return;
+  // カテゴリは見ない。越えられないのは進行中と終了の枠だけ
+  if(isClosedP(p) !== isClosedP(t)){
+    showToast('進行中と終了案件の間は移動できません');
+    return;
+  }
+  ensureOrd(isClosedP(p), function(err){
+    if(err){
+      alert('並び順の初期設定を保存できませんでした。通信を確認して、もう一度お試しください。');
+      rerenderActiveList();
+      return;
+    }
+    applyProjectMove(p, t, after, true);
+  });
+}
+
+// 落とす先の前後の案件から中間値を作る。前後は「表示中の並び」ではなく
+// グループ全体の並びから取るので、絞り込みや検索中でも結果が食い違わない
+function applyProjectMove(p, t, after, allowRenumber){
+  const closed = isClosedP(p);
+  const sib = orderSiblings(closed).filter(x=>x.id !== p.id);
+  const ti = sib.findIndex(x=>x.id === t.id);
+  if(ti < 0){ rerenderActiveList(); return; }
+  const prevItem = after ? sib[ti]   : sib[ti-1];
+  const nextItem = after ? sib[ti+1] : sib[ti];
+
+  // 中間値の刻みが尽きたら、グループを振り直してからやり直す（1回だけ）
+  if(prevItem && nextItem && Math.abs(projOrd(nextItem) - projOrd(prevItem)) < 2){
+    if(!allowRenumber){ rerenderActiveList(); return; }
+    renumberOrd(closed, function(e){
+      if(e){
+        alert('並び順の振り直しを保存できませんでした。通信を確認して、もう一度お試しください。');
+        rerenderActiveList();
+        return;
+      }
+      applyProjectMove(p, t, after, false);
+    });
+    return;
+  }
+
+  let newOrd;
+  if(!prevItem)      newOrd = projOrd(nextItem) - 1000;
+  else if(!nextItem) newOrd = projOrd(prevItem) + 1000;
+  else               newOrd = (projOrd(prevItem) + projOrd(nextItem)) / 2;
+
+  const backupOrd = p.ord, backupOrdV = p.ordV;
+  p.ord = newOrd;
+  p.ordV = ORD_V;
+  invalidateFallbackOrd();
+  rerenderActiveList();
+  // 送っただけで成功にしない。失敗したら元の位置に戻して利用者に見える形で伝える
+  fbDB.patch('projects/' + p.id, {ord:newOrd, ordV:ORD_V}, function(e){
+    if(e){
+      if(backupOrd === undefined) delete p.ord; else p.ord = backupOrd;
+      if(backupOrdV === undefined) delete p.ordV; else p.ordV = backupOrdV;
+      invalidateFallbackOrd();
+      rerenderActiveList();
+      alert('並び順を保存できませんでした。元の位置に戻します。');
+    } else {
+      showToast('並び順を保存しました');
+    }
+  });
+}
+
+// 握り手にmousedownしたときだけ draggable を立てる
+function gripDown(ev){
+  ev.stopPropagation();
+  const item = ev.target.closest ? ev.target.closest('.pl-item') : null;
+  if(item) item.draggable = true;
+}
+
+function clearDropMarks(box){
+  box.querySelectorAll('.pl-drop-before,.pl-drop-after')
+     .forEach(el=>el.classList.remove('pl-drop-before','pl-drop-after'));
+}
+
+// innerHTMLを入れ替えても箱自体は残るので、イベント登録は箱に1回だけ行う
+function initListDnD(containerId){
+  const box = document.getElementById(containerId);
+  if(!box || box._dndReady) return;
+  box._dndReady = true;
+
+  box.addEventListener('dragstart', function(e){
+    const item = e.target.closest ? e.target.closest('.pl-item') : null;
+    if(!item || !item.draggable) return;   // 握り手以外から始まったドラッグは無視
+    _dragPid = Number(item.dataset.pid);
+    item.classList.add('pl-dragging');
+    if(e.dataTransfer){
+      e.dataTransfer.effectAllowed = 'move';
+      try{ e.dataTransfer.setData('text/plain', String(_dragPid)); }catch(err){}
+    }
+  });
+
+  box.addEventListener('dragover', function(e){
+    if(_dragPid === null) return;
+    clearDropMarks(box);
+    _dragOverPid = null;
+    const item = e.target.closest ? e.target.closest('.pl-item') : null;
+    if(!item) return;
+    const src = PROJECTS.find(x=>x.id === _dragPid);
+    if(!src) return;
+    // カテゴリは問わない。進行中と終了の枠だけは越えられない
+    if((item.dataset.closed === '1') !== isClosedP(src)) return;
+    e.preventDefault();
+    const r = item.getBoundingClientRect();
+    const after = (e.clientY - r.top) > (r.height / 2);
+    _dragOverPid = Number(item.dataset.pid);
+    _dragOverAfter = after;
+    item.classList.add(after ? 'pl-drop-after' : 'pl-drop-before');
+  });
+
+  box.addEventListener('drop', function(e){
+    e.preventDefault();
+    clearDropMarks(box);
+    const pid = _dragPid, tid = _dragOverPid, after = _dragOverAfter;
+    _dragPid = null; _dragOverPid = null;
+    if(pid === null || tid === null) return;
+    moveProject(pid, tid, after);
+  });
+
+  box.addEventListener('dragend', function(){
+    clearDropMarks(box);
+    box.querySelectorAll('.pl-item').forEach(el=>{
+      el.draggable = false;
+      el.classList.remove('pl-dragging');
+    });
+    _dragPid = null; _dragOverPid = null;
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// 詳細画面から「どこへ戻るか」
+// ════════════════════════════════════════════════════════
+// 以前は戻るボタンが showList() 固定で、マイビューから案件を開いても
+// プロジェクト一覧に戻っていた（毎回マイビューを開き直す手間になっていた）
+let _detailFrom = 'list';
+let _backScrollTop = 0;
+
+function goBackFromDetail(){
+  const target = _detailFrom;
+  if(target === 'myview')       showMyView();
+  else if(target === 'archive') showArchive();
+  else                          showList();
+  // 未保存の破棄をキャンセルしたときは詳細に留まるので、そのときは何もしない
+  const detail = document.getElementById('view-detail');
+  if(detail && detail.style.display === 'block') return;
+  // 一覧が長いので、位置を戻さないと結局探し直しになる。
+  // 一覧の描画は同期処理なので、showList()の直後にそのまま戻せる。
+  // requestAnimationFrameは使わない（非表示のタブでは発火せず、無言で戻らなくなる）
+  const main = document.querySelector('.main');
+  const y = _backScrollTop;
+  const restoreScroll = function(){
+    window.scrollTo(0, y);
+    if(main) main.scrollTop = y;
+  };
+  restoreScroll();
+  setTimeout(restoreScroll, 0);   // 描画の遅れで戻りきらない場合の保険
+}
+
 function renderList(searchQ){
   buildOwnerSelect();
   buildWeekSelect();
@@ -29552,15 +29881,15 @@ function renderList(searchQ){
     return true;
   });
 
-  // ②カテゴリ順→元のID順→Closeを末尾
-  const CAT_ORDER = CATEGORIES;
+  // Closeを末尾に置き、その中は手動順（ord）だけで並べる。
+  // カテゴリでは分けない（分けると「動かせない案件」が出てしまう。
+  // Word出力にカテゴリは出さないので、一覧の並びを縛る理由もない）
+  invalidateFallbackOrd();
   filtered.sort((a,b)=>{
     if(a.status==='closed' && b.status!=='closed') return 1;
     if(a.status!=='closed' && b.status==='closed') return -1;
-    const catA = CAT_ORDER.indexOf(a.cat);
-    const catB = CAT_ORDER.indexOf(b.cat);
-    if(catA !== catB) return catA - catB;
-    return a.id - b.id;  // 同カテゴリ内はExcel順（ID順）
+    // 手動並び順（ord）→ ordが無ければ従来の並び（カテゴリ順→ID順）の位置を代用
+    return (projOrd(a) - projOrd(b)) || (a.id - b.id);
   });
 
   const el = document.getElementById('projectList');
@@ -29573,11 +29902,12 @@ function renderList(searchQ){
     const divider = (firstClosed>0 && i===firstClosed)
       ? '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px;"><span style="flex:1;height:1px;background:var(--border)"></span><span style="font-size:9px;color:var(--hint);white-space:nowrap">終了案件</span><span style="flex:1;height:1px;background:var(--border)"></span></div>'
       : '';
-    return divider + renderProjectCard(p);
+    return divider + renderProjectCard(p, 'list');
   }).join('');
+  initListDnD('projectList');
 }
 
-function renderProjectCard(p){
+function renderProjectCard(p, from){
   const log = getLog(p.id, currentWeek);
   const hls = HIGHLIGHTS[currentWeek]||[];
   const hl = hls.find(h=>h.projectId===p.id);
@@ -29598,8 +29928,16 @@ function renderProjectCard(p){
     inputBadge = '<span class="tag" style="background:var(--warn-bg);color:var(--warn);font-size:9px">未入力</span>';
   }
 
-  return `<div class="${cls}" data-pid="${p.id}" onclick="openDetail(${p.id})">
-    ${inputBadge}
+  // 並び替えの握り手。行全体をドラッグ可能にすると案件を開くクリックと取り合うので、
+  // 握り手にmousedownしたときだけ draggable を立てる。
+  // 終了案件にも付ける（半分以上が終了案件なので、外すと大半が動かせなくなる）
+  const gripTitle = p.status==='closed'
+    ? 'ドラッグで並び替え（終了案件の中で移動できます）'
+    : 'ドラッグで並び替え（進行中の中で自由に移動できます）';
+  const grip = `<span class="pl-grip" title="${gripTitle}" onmousedown="gripDown(event)" onclick="event.stopPropagation()">⋮⋮</span>`;
+  const fromView = (from === 'myview') ? 'myview' : 'list';
+  return `<div class="${cls} has-grip" data-pid="${p.id}" data-cat="${escAttr(p.cat)}" data-closed="${p.status==='closed'?'1':'0'}" onclick="openDetail(${p.id},'${fromView}')">
+    ${grip}${inputBadge}
     <span class="pl-cat">${p.cat.substring(0,1)}</span>
     <span class="pl-name">${esc(p.name)}</span>
     <span class="pl-owner-col">${esc(ownerParts.join("・"))}</span>
@@ -29644,6 +29982,9 @@ function renderArchive(){
 }
 
 function openDetailFromArchive(pid){
+  _detailFrom = 'archive';
+  const mainEl = document.querySelector('.main');
+  _backScrollTop = Math.max(window.scrollY || document.documentElement.scrollTop || 0, mainEl ? mainEl.scrollTop : 0);
   currentProjectId = Number(pid);
   document.getElementById('view-archive').style.display='none';
   document.getElementById('view-detail').style.display='block';
@@ -29658,17 +29999,26 @@ function openDetailFromArchive(pid){
 // ────────────────────────────────────────────────────────
 // DETAIL VIEW
 // ────────────────────────────────────────────────────────
-function openDetail(pid){
+function openDetail(pid, from){
   if(!confirmDiscardUnsaved()) return;
+  // どこから開いたかを覚えておく。戻るボタンの行き先とラベルがこれで決まる
+  _detailFrom = (from === 'myview' || from === 'archive') ? from : 'list';
+  // スクロールしているのは window 側（.mainは overflow:visible）。
+  // 環境差で .main が動く作りになった場合も拾えるよう、大きい方を採る
+  const main = document.querySelector('.main');
+  _backScrollTop = Math.max(window.scrollY || document.documentElement.scrollTop || 0, main ? main.scrollTop : 0);
   currentProjectId = Number(pid);
   // 'myview'が抜けていたため、マイビューから案件を開くと二重表示になっていた
   ['list','detail','report','archive','myview'].forEach(v=>{
     const el = document.getElementById('view-'+v);
     if(el) el.style.display = v==='detail'?'block':'none';
   });
-  ['nav-list','nav-report','nav-archive'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
-  document.getElementById('nav-list').classList.add('active');
-  const main = document.querySelector('.main');
+  // サイドバーの選択も呼び出し元に合わせる（以前は常に「プロジェクト一覧」が選ばれていた）
+  const navId = _detailFrom==='myview' ? 'nav-myview'
+              : _detailFrom==='archive' ? 'nav-archive'
+              : 'nav-list';
+  ['nav-list','nav-report','nav-archive','nav-myview'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
+  document.getElementById(navId)?.classList.add('active');
   if(main) main.scrollTop = 0;
   window.scrollTo(0,0);
   renderDetail();
@@ -29679,6 +30029,10 @@ function renderDetail(){
   if(!p) return;
 
   document.getElementById('detail-topbar-title').textContent = p.name;
+  const backBtn = document.getElementById('btn-detail-back');
+  if(backBtn) backBtn.textContent = _detailFrom==='myview' ? '← マイビュー'
+                                  : _detailFrom==='archive' ? '← 終了案件'
+                                  : '← 一覧';
   const btnStatus = document.getElementById('btn-toggle-status');
   btnStatus.textContent = p.status==='closed'?'✓ 進行中に戻す':'プロジェクトクローズ';
 
@@ -30171,7 +30525,12 @@ function toggleProjectStatus(){
   const p = PROJECTS.find(x=>x.id===currentProjectId);
   if(!p) return;
   if(p.status==='closed'){
+    // 進行中に戻したら一覧の先頭に置く（これから作業する案件なので）。
+    // ordをそのままにすると終了グループ用の値が残り、進行中の最後尾に沈む
+    p.ord = ordForTop(false);
+    p.ordV = ORD_V;
     p.status='active';
+    invalidateFallbackOrd();
     window._lastTs = Date.now();
     fbDB.put(`projects/${p.id}`, p);
     fbDB.writeLog('project_restore', `pid:${p.id} name:${p.name}`);
@@ -30181,7 +30540,11 @@ function toggleProjectStatus(){
     showList();
   } else {
     if(!confirm(`「${p.name}」をクローズしますか？\n\n一覧からは非表示になりますが、サイドバーの「終了案件」から確認・復活できます。`)) return;
+    // 終了グループの先頭に置く（直近で終了した案件が上に来る）
+    p.ord = ordForTop(true);
+    p.ordV = ORD_V;
     p.status='closed';
+    invalidateFallbackOrd();
     window._lastTs = Date.now();
     fbDB.put(`projects/${p.id}`, p);
     fbDB.writeLog('project_close', `pid:${p.id} name:${p.name}`);
@@ -30620,14 +30983,19 @@ function addProject(){
   // 後からPUTした方が先の1件を丸ごと上書きしてしまう
   // （PROJECTSが空のときMath.max()が-Infinityを返す問題も同時に解消）
   const newId = Date.now();
+  const newCat = document.getElementById('m-cat').value;
   const newProject = {
     id:newId,
-    cat:document.getElementById('m-cat').value,
+    cat:newCat,
     name,
     owner,
     summary:document.getElementById('m-summary').value.trim(),
     kpi:document.getElementById('m-kpi').value.trim(),
-    status:'active'
+    status:'active',
+    // 追加した案件は一覧の先頭に置く。IDがDate.now()ベースなので、
+    // ordを持たせないと必ず最後尾に付いて見つけられなくなる
+    ord: ordForNewProject(),
+    ordV: ORD_V
   };
   PROJECTS.push(newProject);
   fbDB.put(`projects/${newId}`, newProject);
